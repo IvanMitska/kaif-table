@@ -6,7 +6,9 @@ import { Dropdown } from '@/components/ui/dropdown'
 import { Input } from '@/components/ui/input'
 import { Modal } from '@/components/ui/modal'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { useLanguage } from '@/context/LanguageContext'
 import { categoriesApi, paymentMethodsApi, transactionsApi, exportApi } from '@/lib/api'
+import type { Translations } from '@/lib/i18n'
 import { cn, formatCurrency, formatDate } from '@/lib/utils'
 import type { Category, PaymentMethod, Transaction, TransactionFilters } from '@/types'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
@@ -26,6 +28,7 @@ import {
 import { useState } from 'react'
 
 export function TransactionsPage() {
+  const { t } = useLanguage()
   const queryClient = useQueryClient()
   const [filters, setFilters] = useState<TransactionFilters & { page?: number; limit?: number }>({
     page: 1,
@@ -101,7 +104,7 @@ export function TransactionsPage() {
         <div className="relative flex-1 max-w-md">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
           <Input
-            placeholder="Поиск по описанию..."
+            placeholder={t.transactions.search}
             className="pl-10 bg-white border-slate-200 focus:border-primary"
             value={filters.search || ''}
             onChange={(e) => setFilters({ ...filters, search: e.target.value, page: 1 })}
@@ -114,7 +117,7 @@ export function TransactionsPage() {
             className={cn(activeFiltersCount > 0 && "border-primary text-primary")}
           >
             <Filter className="h-4 w-4 mr-2" />
-            Фильтры
+            {t.common.filter}
             {activeFiltersCount > 0 && (
               <span className="ml-2 w-5 h-5 rounded-full bg-primary text-white text-xs flex items-center justify-center">
                 {activeFiltersCount}
@@ -127,7 +130,7 @@ export function TransactionsPage() {
           </Button>
           <Button onClick={() => { setEditingTransaction(null); setIsModalOpen(true) }} className="bg-gradient-to-r from-primary to-indigo-600 hover:from-primary/90 hover:to-indigo-600/90 shadow-lg shadow-primary/25">
             <Plus className="h-4 w-4 mr-2" />
-            Добавить
+            {t.transactions.addTransaction}
           </Button>
         </div>
       </div>
@@ -139,19 +142,17 @@ export function TransactionsPage() {
             <div className="flex flex-col gap-3">
               {/* Date Range */}
               <div className="flex flex-col sm:flex-row gap-2 sm:items-center">
-                <span className="text-sm text-slate-500 sm:hidden">Период:</span>
                 <div className="flex items-center gap-2">
+                  <span className="text-sm text-slate-500">{t.transactions.from}</span>
                   <DatePicker
                     value={filters.dateFrom || ''}
                     onChange={(value) => setFilters({ ...filters, dateFrom: value, page: 1 })}
-                    placeholder="С даты"
                     className="flex-1 sm:w-40"
                   />
-                  <span className="text-slate-300">—</span>
+                  <span className="text-sm text-slate-500">{t.transactions.to}</span>
                   <DatePicker
                     value={filters.dateTo || ''}
                     onChange={(value) => setFilters({ ...filters, dateTo: value, page: 1 })}
-                    placeholder="По дату"
                     className="flex-1 sm:w-40"
                   />
                 </div>
@@ -162,9 +163,9 @@ export function TransactionsPage() {
                   className="w-full sm:w-48"
                   value={filters.categoryId?.toString() || ''}
                   onChange={(value) => setFilters({ ...filters, categoryId: Number(value) || undefined, page: 1 })}
-                  placeholder="Все категории"
+                  placeholder={t.transactions.allCategories}
                   options={[
-                    { value: '', label: 'Все категории' },
+                    { value: '', label: t.transactions.allCategories },
                     ...categories.map((cat) => ({ value: cat.id.toString(), label: cat.name }))
                   ]}
                 />
@@ -172,9 +173,9 @@ export function TransactionsPage() {
                   className="w-full sm:w-44"
                   value={filters.paymentMethodId?.toString() || ''}
                   onChange={(value) => setFilters({ ...filters, paymentMethodId: Number(value) || undefined, page: 1 })}
-                  placeholder="Все способы"
+                  placeholder={t.transactions.allPaymentMethods}
                   options={[
-                    { value: '', label: 'Все способы' },
+                    { value: '', label: t.transactions.allPaymentMethods },
                     ...paymentMethods.map((pm) => ({ value: pm.id.toString(), label: pm.name }))
                   ]}
                 />
@@ -186,7 +187,6 @@ export function TransactionsPage() {
                     className="text-slate-500 hover:text-slate-700 self-start sm:self-auto"
                   >
                     <X className="h-4 w-4 mr-1" />
-                    Сбросить
                   </Button>
                 )}
               </div>
@@ -200,7 +200,7 @@ export function TransactionsPage() {
         <CardHeader className="bg-slate-50/50 border-b border-slate-100">
           <div className="flex items-center justify-between">
             <CardTitle className="text-base font-semibold flex items-center gap-2">
-              Транзакции
+              {t.transactions.title}
               <Badge variant="secondary" className="font-normal">{total}</Badge>
             </CardTitle>
           </div>
@@ -213,20 +213,19 @@ export function TransactionsPage() {
           ) : transactions.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-64 text-slate-500">
               <FileIcon className="h-12 w-12 mb-3 text-slate-300" />
-              <p className="font-medium">Нет транзакций</p>
-              <p className="text-sm">Добавьте первую транзакцию</p>
+              <p className="font-medium">{t.transactions.noTransactions}</p>
             </div>
           ) : (
             <>
               <Table>
                 <TableHeader>
                   <TableRow className="bg-slate-50/50 hover:bg-slate-50/50">
-                    <TableHead className="font-semibold text-slate-600">Дата</TableHead>
-                    <TableHead className="font-semibold text-slate-600">Сумма</TableHead>
-                    <TableHead className="font-semibold text-slate-600">Категория</TableHead>
-                    <TableHead className="font-semibold text-slate-600">Описание</TableHead>
-                    <TableHead className="font-semibold text-slate-600">Способ</TableHead>
-                    <TableHead className="font-semibold text-slate-600 text-center">Чек</TableHead>
+                    <TableHead className="font-semibold text-slate-600">{t.transactions.table.date}</TableHead>
+                    <TableHead className="font-semibold text-slate-600">{t.transactions.table.amount}</TableHead>
+                    <TableHead className="font-semibold text-slate-600">{t.transactions.table.category}</TableHead>
+                    <TableHead className="font-semibold text-slate-600">{t.transactions.table.description}</TableHead>
+                    <TableHead className="font-semibold text-slate-600">{t.transactions.table.paymentMethod}</TableHead>
+                    <TableHead className="font-semibold text-slate-600 text-center">{t.transactionModal.hasReceipt}</TableHead>
                     <TableHead className="font-semibold text-slate-600 text-center">iiko</TableHead>
                     <TableHead className="w-20"></TableHead>
                   </TableRow>
@@ -305,7 +304,7 @@ export function TransactionsPage() {
                             size="icon"
                             className="h-8 w-8 hover:bg-red-50"
                             onClick={() => {
-                              if (confirm('Удалить эту транзакцию?')) {
+                              if (confirm(t.transactions.deleteConfirm)) {
                                 deleteMutation.mutate(transaction.id)
                               }
                             }}
@@ -368,6 +367,7 @@ export function TransactionsPage() {
           }
         }}
         isLoading={createMutation.isPending || updateMutation.isPending}
+        t={t}
       />
     </div>
   )
@@ -389,6 +389,7 @@ interface TransactionModalProps {
   paymentMethods: PaymentMethod[]
   onSubmit: (data: Partial<Transaction>) => void
   isLoading: boolean
+  t: Translations
 }
 
 function TransactionModal({
@@ -399,6 +400,7 @@ function TransactionModal({
   paymentMethods,
   onSubmit,
   isLoading,
+  t,
 }: TransactionModalProps) {
   const [formData, setFormData] = useState({
     date: transaction?.date ? format(new Date(transaction.date), 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd'),
@@ -438,21 +440,20 @@ function TransactionModal({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={transaction ? 'Редактировать транзакцию' : 'Новая транзакция'}
+      title={transaction ? t.transactionModal.editTitle : t.transactionModal.addTitle}
       size="lg"
     >
       <form onSubmit={handleSubmit} className="space-y-5">
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1.5">Дата</label>
+            <label className="block text-sm font-medium text-slate-700 mb-1.5">{t.transactionModal.date}</label>
             <DatePicker
               value={formData.date}
               onChange={(value) => setFormData({ ...formData, date: value })}
-              placeholder="Выберите дату"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1.5">Сумма (THB)</label>
+            <label className="block text-sm font-medium text-slate-700 mb-1.5">{t.transactionModal.amount} (THB)</label>
             <Input
               type="number"
               step="0.01"
@@ -460,60 +461,54 @@ function TransactionModal({
               value={formData.amount}
               onChange={(e) => setFormData({ ...formData, amount: parseFloat(e.target.value) })}
               required
-              placeholder="-1000 расход, 1000 доход"
             />
           </div>
         </div>
 
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1.5">Категория</label>
+            <label className="block text-sm font-medium text-slate-700 mb-1.5">{t.transactionModal.category}</label>
             <Dropdown
               value={formData.categoryId.toString()}
               onChange={(value) => setFormData({ ...formData, categoryId: parseInt(value) })}
               options={categories.map((cat) => ({ value: cat.id.toString(), label: cat.name }))}
-              placeholder="Выберите категорию"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1.5">Способ оплаты</label>
+            <label className="block text-sm font-medium text-slate-700 mb-1.5">{t.transactionModal.paymentMethod}</label>
             <Dropdown
               value={formData.paymentMethodId.toString()}
               onChange={(value) => setFormData({ ...formData, paymentMethodId: parseInt(value) })}
               options={paymentMethods.map((pm) => ({ value: pm.id.toString(), label: pm.name }))}
-              placeholder="Выберите способ"
             />
           </div>
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1.5">Описание</label>
+          <label className="block text-sm font-medium text-slate-700 mb-1.5">{t.transactionModal.description}</label>
           <Input
             className="bg-white"
             value={formData.service}
             onChange={(e) => setFormData({ ...formData, service: e.target.value })}
             required
-            placeholder="За что платёж"
           />
         </div>
 
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1.5">Поставщик</label>
+            <label className="block text-sm font-medium text-slate-700 mb-1.5">{t.transactionModal.supplier}</label>
             <Input
               className="bg-white"
               value={formData.supplier}
               onChange={(e) => setFormData({ ...formData, supplier: e.target.value })}
-              placeholder="Опционально"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1.5">Комментарий</label>
+            <label className="block text-sm font-medium text-slate-700 mb-1.5">{t.transactionModal.comment}</label>
             <Input
               className="bg-white"
               value={formData.comment}
               onChange={(e) => setFormData({ ...formData, comment: e.target.value })}
-              placeholder="Опционально"
             />
           </div>
         </div>
@@ -526,7 +521,7 @@ function TransactionModal({
               onChange={(e) => setFormData({ ...formData, hasReceipt: e.target.checked })}
               className="h-4 w-4 rounded border-slate-300 text-primary focus:ring-primary"
             />
-            <span className="text-sm text-slate-700">Есть чек</span>
+            <span className="text-sm text-slate-700">{t.transactionModal.hasReceipt}</span>
           </label>
           <label className="flex items-center gap-2.5 cursor-pointer">
             <input
@@ -535,20 +530,20 @@ function TransactionModal({
               onChange={(e) => setFormData({ ...formData, enteredInIiko: e.target.checked })}
               className="h-4 w-4 rounded border-slate-300 text-primary focus:ring-primary"
             />
-            <span className="text-sm text-slate-700">Введён в iiko</span>
+            <span className="text-sm text-slate-700">{t.transactionModal.enteredInIiko}</span>
           </label>
         </div>
 
         <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">
           <Button type="button" variant="outline" onClick={onClose}>
-            Отмена
+            {t.transactionModal.cancel}
           </Button>
           <Button
             type="submit"
             disabled={isLoading}
             className="bg-gradient-to-r from-primary to-indigo-600 hover:from-primary/90 hover:to-indigo-600/90"
           >
-            {isLoading ? 'Сохранение...' : transaction ? 'Сохранить' : 'Добавить'}
+            {isLoading ? t.transactionModal.saving : t.transactionModal.save}
           </Button>
         </div>
       </form>

@@ -1,6 +1,7 @@
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { DatePicker } from '@/components/ui/datepicker'
+import { useLanguage } from '@/context/LanguageContext'
 import { dashboardApi, exportApi } from '@/lib/api'
 import { cn, formatCurrency } from '@/lib/utils'
 import type { DashboardStats } from '@/types'
@@ -31,6 +32,7 @@ import {
 const COLORS = ['#4f46e5', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16', '#f97316', '#14b8a6']
 
 export function ReportsPage() {
+  const { t } = useLanguage()
   const [dateFrom, setDateFrom] = useState(format(subMonths(new Date(), 1), 'yyyy-MM-dd'))
   const [dateTo, setDateTo] = useState(format(new Date(), 'yyyy-MM-dd'))
   const [isExporting, setIsExporting] = useState<'excel' | 'pdf' | null>(null)
@@ -77,8 +79,8 @@ export function ReportsPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-slate-900">Отчёты</h2>
-          <p className="text-slate-500 mt-1">Финансовая аналитика за период</p>
+          <h2 className="text-2xl font-bold text-slate-900">{t.reports.title}</h2>
+          <p className="text-slate-500 mt-1">{t.reports.subtitle}</p>
         </div>
       </div>
 
@@ -90,21 +92,19 @@ export function ReportsPage() {
             {/* Date Range */}
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3">
               <div className="flex items-center gap-2 w-full sm:w-auto">
-                <span className="text-sm text-slate-500 w-6">С:</span>
+                <span className="text-sm text-slate-500 w-8">{t.reports.from}</span>
                 <DatePicker
                   value={dateFrom}
                   onChange={setDateFrom}
-                  placeholder="Начало"
                   className="flex-1 sm:w-40"
                 />
               </div>
               <span className="text-slate-300 hidden sm:block">—</span>
               <div className="flex items-center gap-2 w-full sm:w-auto">
-                <span className="text-sm text-slate-500 w-6">По:</span>
+                <span className="text-sm text-slate-500 w-8">{t.reports.to}</span>
                 <DatePicker
                   value={dateTo}
                   onChange={setDateTo}
-                  placeholder="Конец"
                   className="flex-1 sm:w-40"
                 />
               </div>
@@ -123,7 +123,7 @@ export function ReportsPage() {
                 ) : (
                   <FileSpreadsheet className="h-4 w-4 mr-2" />
                 )}
-                Excel
+                {t.reports.exportExcel}
               </Button>
               <Button
                 variant="outline"
@@ -136,7 +136,7 @@ export function ReportsPage() {
                 ) : (
                   <FileText className="h-4 w-4 mr-2" />
                 )}
-                PDF
+                {t.reports.exportPdf}
               </Button>
             </div>
           </div>
@@ -147,7 +147,7 @@ export function ReportsPage() {
         <div className="flex items-center justify-center h-64">
           <div className="flex flex-col items-center gap-3">
             <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary"></div>
-            <span className="text-sm text-slate-500">Загрузка данных...</span>
+            <span className="text-sm text-slate-500">{t.common.loading}</span>
           </div>
         </div>
       ) : (
@@ -159,7 +159,7 @@ export function ReportsPage() {
               <CardContent className="pt-5">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-slate-500">Доходы</p>
+                    <p className="text-sm font-medium text-slate-500">{t.reports.totalIncome}</p>
                     <p className="text-2xl font-bold text-emerald-600 mt-1">
                       {formatCurrency(stats?.totalIncome || 0)}
                     </p>
@@ -176,7 +176,7 @@ export function ReportsPage() {
               <CardContent className="pt-5">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-slate-500">Расходы</p>
+                    <p className="text-sm font-medium text-slate-500">{t.reports.totalExpenses}</p>
                     <p className="text-2xl font-bold text-red-600 mt-1">
                       {formatCurrency(Math.abs(stats?.totalExpenses || 0))}
                     </p>
@@ -196,7 +196,7 @@ export function ReportsPage() {
               <CardContent className="pt-5">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-slate-500">Баланс</p>
+                    <p className="text-sm font-medium text-slate-500">{t.reports.netProfit}</p>
                     <p className={cn(
                       "text-2xl font-bold mt-1",
                       balance >= 0 ? "text-blue-600" : "text-orange-600"
@@ -219,7 +219,7 @@ export function ReportsPage() {
               <CardContent className="pt-5">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-slate-500">Транзакций</p>
+                    <p className="text-sm font-medium text-slate-500">{t.reports.transactionCount}</p>
                     <p className="text-2xl font-bold text-violet-600 mt-1">
                       {stats?.transactionCount || 0}
                     </p>
@@ -237,7 +237,7 @@ export function ReportsPage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <BarChart3 className="h-5 w-5 text-slate-400" />
-                Расходы по категориям
+                {t.reports.byCategory}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -273,7 +273,7 @@ export function ReportsPage() {
                         boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
                       }}
                     />
-                    <Bar dataKey="total" name="Сумма" radius={[0, 6, 6, 0]}>
+                    <Bar dataKey="total" name={t.reports.amount} radius={[0, 6, 6, 0]}>
                       {expenseCategories.map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={entry.color || COLORS[index % COLORS.length]} />
                       ))}
@@ -282,7 +282,7 @@ export function ReportsPage() {
                 </ResponsiveContainer>
               ) : (
                 <div className="h-[200px] flex items-center justify-center text-slate-400">
-                  Нет данных о расходах за период
+                  {t.reports.noData}
                 </div>
               )}
             </CardContent>
@@ -298,7 +298,7 @@ export function ReportsPage() {
                   <div className="w-8 h-8 rounded-lg bg-red-100 flex items-center justify-center">
                     <ArrowDownRight className="h-4 w-4 text-red-600" />
                   </div>
-                  Расходы по категориям
+                  {t.reports.totalExpenses}
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -329,20 +329,9 @@ export function ReportsPage() {
                       </div>
                     )
                   })}
-                  {expenseCategories.length > 0 && (
-                    <div className="flex items-center justify-between p-3 bg-red-50 rounded-xl font-bold mt-3">
-                      <span className="text-slate-900">Итого</span>
-                      <div className="flex items-center gap-4">
-                        <span className="text-red-600">
-                          {formatCurrency(Math.abs(stats?.totalExpenses || 0))}
-                        </span>
-                        <span className="text-sm text-slate-500 w-14 text-right">100%</span>
-                      </div>
-                    </div>
-                  )}
                   {expenseCategories.length === 0 && (
                     <div className="text-center py-8 text-slate-400">
-                      Нет данных за период
+                      {t.reports.noData}
                     </div>
                   )}
                 </div>
@@ -357,7 +346,7 @@ export function ReportsPage() {
                   <div className="w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center">
                     <ArrowUpRight className="h-4 w-4 text-emerald-600" />
                   </div>
-                  Доходы по категориям
+                  {t.reports.totalIncome}
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -388,20 +377,9 @@ export function ReportsPage() {
                       </div>
                     )
                   })}
-                  {incomeCategories.length > 0 && (
-                    <div className="flex items-center justify-between p-3 bg-emerald-50 rounded-xl font-bold mt-3">
-                      <span className="text-slate-900">Итого</span>
-                      <div className="flex items-center gap-4">
-                        <span className="text-emerald-600">
-                          {formatCurrency(stats?.totalIncome || 0)}
-                        </span>
-                        <span className="text-sm text-slate-500 w-14 text-right">100%</span>
-                      </div>
-                    </div>
-                  )}
                   {incomeCategories.length === 0 && (
                     <div className="text-center py-8 text-slate-400">
-                      Нет данных о доходах за период
+                      {t.reports.noData}
                     </div>
                   )}
                 </div>
@@ -414,7 +392,7 @@ export function ReportsPage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <CreditCard className="h-5 w-5 text-slate-400" />
-                По способам оплаты
+                {t.reports.byPaymentMethod}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -451,7 +429,7 @@ export function ReportsPage() {
                 ))}
                 {(!stats?.byPaymentMethod || stats.byPaymentMethod.length === 0) && (
                   <div className="col-span-full text-center py-8 text-slate-400">
-                    Нет данных за период
+                    {t.reports.noData}
                   </div>
                 )}
               </div>

@@ -1,19 +1,20 @@
+import { LanguageSwitcher } from '@/components/LanguageSwitcher'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { useAuth } from '@/context/AuthContext'
+import { useLanguage } from '@/context/LanguageContext'
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
 export function LoginPage() {
-  const [isLogin, setIsLogin] = useState(true)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [name, setName] = useState('')
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
 
-  const { login, register } = useAuth()
+  const { login } = useAuth()
+  const { t } = useLanguage()
   const navigate = useNavigate()
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -22,15 +23,11 @@ export function LoginPage() {
     setIsLoading(true)
 
     try {
-      if (isLogin) {
-        await login(email, password)
-      } else {
-        await register(email, password, name)
-      }
+      await login(email, password)
       navigate('/')
     } catch (err: unknown) {
       const error = err as { response?: { data?: { message?: string } } }
-      setError(error.response?.data?.message || 'Произошла ошибка')
+      setError(error.response?.data?.message || t.login.error)
     } finally {
       setIsLoading(false)
     }
@@ -38,6 +35,11 @@ export function LoginPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-100 via-white to-indigo-50 p-4">
+      {/* Language switcher */}
+      <div className="absolute top-4 right-4 z-10">
+        <LanguageSwitcher />
+      </div>
+
       {/* Background decoration */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-primary/20 to-indigo-500/20 rounded-full blur-3xl" />
@@ -50,31 +52,16 @@ export function LoginPage() {
             <span className="text-white font-bold text-2xl">K</span>
           </div>
           <CardTitle className="text-2xl font-bold">
-            {isLogin ? 'Добро пожаловать' : 'Создать аккаунт'}
+            {t.login.title}
           </CardTitle>
           <CardDescription className="text-slate-500">
-            {isLogin
-              ? 'Войдите в систему KAIF Finance'
-              : 'Заполните данные для регистрации'}
+            {t.login.subtitle}
           </CardDescription>
         </CardHeader>
         <CardContent className="pt-4">
           <form onSubmit={handleSubmit} className="space-y-4">
-            {!isLogin && (
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1.5">Имя</label>
-                <Input
-                  type="text"
-                  placeholder="Ваше имя"
-                  className="bg-white"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  required
-                />
-              </div>
-            )}
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1.5">Email</label>
+              <label className="block text-sm font-medium text-slate-700 mb-1.5">{t.login.email}</label>
               <Input
                 type="email"
                 placeholder="email@example.com"
@@ -85,7 +72,7 @@ export function LoginPage() {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1.5">Пароль</label>
+              <label className="block text-sm font-medium text-slate-700 mb-1.5">{t.login.password}</label>
               <Input
                 type="password"
                 placeholder="••••••••"
@@ -99,7 +86,7 @@ export function LoginPage() {
 
             {error && (
               <div className="p-3 rounded-lg bg-red-50 border border-red-200">
-                <p className="text-sm text-red-600 text-center">{error}</p>
+                <p className="text-sm text-red-600 text-center">{t.login.error}</p>
               </div>
             )}
 
@@ -111,23 +98,12 @@ export function LoginPage() {
               {isLoading ? (
                 <div className="flex items-center gap-2">
                   <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  Загрузка...
+                  {t.login.signingIn}
                 </div>
               ) : (
-                isLogin ? 'Войти' : 'Зарегистрироваться'
+                t.login.signIn
               )}
             </Button>
-
-            <p className="text-center text-sm text-slate-500 pt-2">
-              {isLogin ? 'Нет аккаунта?' : 'Уже есть аккаунт?'}{' '}
-              <button
-                type="button"
-                className="text-primary font-medium hover:underline"
-                onClick={() => setIsLogin(!isLogin)}
-              >
-                {isLogin ? 'Зарегистрироваться' : 'Войти'}
-              </button>
-            </p>
           </form>
         </CardContent>
       </Card>

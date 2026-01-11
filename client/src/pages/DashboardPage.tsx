@@ -4,9 +4,11 @@ import { DatePicker } from '@/components/ui/datepicker'
 import { Dropdown } from '@/components/ui/dropdown'
 import { Input } from '@/components/ui/input'
 import { Modal } from '@/components/ui/modal'
+import { useLanguage } from '@/context/LanguageContext'
 import { categoriesApi, dashboardApi, paymentMethodsApi, transactionsApi } from '@/lib/api'
 import { cn, formatCurrency } from '@/lib/utils'
 import type { Category, DashboardStats, PaymentMethod } from '@/types'
+import type { Translations } from '@/lib/i18n'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { format, subDays, subMonths } from 'date-fns'
 import {
@@ -65,6 +67,7 @@ function getDateRange(range: DateRange): { dateFrom: string; dateTo: string } {
 }
 
 export function DashboardPage() {
+  const { t } = useLanguage()
   const queryClient = useQueryClient()
   const [dateRange, setDateRange] = useState<DateRange>('30d')
   const [isQuickAddOpen, setIsQuickAddOpen] = useState(false)
@@ -110,8 +113,8 @@ export function DashboardPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-slate-900">Обзор финансов</h2>
-          <p className="text-slate-500 mt-1">Статистика за выбранный период</p>
+          <h2 className="text-2xl font-bold text-slate-900">{t.dashboard.title}</h2>
+          <p className="text-slate-500 mt-1">{t.dashboard.subtitle}</p>
         </div>
         <div className="flex items-center gap-3">
           <Button
@@ -119,18 +122,18 @@ export function DashboardPage() {
             className="bg-gradient-to-r from-primary to-indigo-600 hover:from-primary/90 hover:to-indigo-600/90 shadow-lg shadow-primary/25"
           >
             <Zap className="h-4 w-4 mr-2" />
-            Быстрая запись
+            {t.dashboard.quickAdd}
           </Button>
           <Dropdown
             value={dateRange}
             onChange={(value) => setDateRange(value as DateRange)}
             className="w-40"
             options={[
-              { value: '7d', label: '7 дней' },
-              { value: '30d', label: '30 дней' },
-              { value: '3m', label: '3 месяца' },
-              { value: '6m', label: '6 месяцев' },
-              { value: '1y', label: '1 год' },
+              { value: '7d', label: t.dashboard.periods['7d'] },
+              { value: '30d', label: t.dashboard.periods['30d'] },
+              { value: '3m', label: t.dashboard.periods['3m'] },
+              { value: '6m', label: t.dashboard.periods['6m'] },
+              { value: '1y', label: t.dashboard.periods['1y'] },
             ]}
           />
         </div>
@@ -143,7 +146,7 @@ export function DashboardPage() {
           <CardContent className="pt-5">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-slate-500">Доходы</p>
+                <p className="text-sm font-medium text-slate-500">{t.dashboard.income}</p>
                 <p className="text-2xl font-bold text-emerald-600 mt-1">
                   {formatCurrency(stats?.totalIncome || 0)}
                 </p>
@@ -160,7 +163,7 @@ export function DashboardPage() {
           <CardContent className="pt-5">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-slate-500">Расходы</p>
+                <p className="text-sm font-medium text-slate-500">{t.dashboard.expenses}</p>
                 <p className="text-2xl font-bold text-red-600 mt-1">
                   {formatCurrency(Math.abs(stats?.totalExpenses || 0))}
                 </p>
@@ -180,7 +183,7 @@ export function DashboardPage() {
           <CardContent className="pt-5">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-slate-500">Баланс</p>
+                <p className="text-sm font-medium text-slate-500">{t.dashboard.balance}</p>
                 <p className={cn(
                   "text-2xl font-bold mt-1",
                   balance >= 0 ? "text-blue-600" : "text-orange-600"
@@ -203,7 +206,7 @@ export function DashboardPage() {
           <CardContent className="pt-5">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-slate-500">Транзакций</p>
+                <p className="text-sm font-medium text-slate-500">{t.dashboard.transactions}</p>
                 <p className="text-2xl font-bold text-violet-600 mt-1">
                   {stats?.transactionCount || 0}
                 </p>
@@ -223,7 +226,7 @@ export function DashboardPage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <TrendingUp className="h-5 w-5 text-slate-400" />
-              Динамика по дням
+              {t.dashboard.dailyTrend}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -251,7 +254,7 @@ export function DashboardPage() {
                   <Line
                     type="monotone"
                     dataKey="income"
-                    name="Доходы"
+                    name={t.dashboard.income}
                     stroke="#10b981"
                     strokeWidth={2}
                     dot={{ fill: '#10b981', strokeWidth: 2 }}
@@ -259,7 +262,7 @@ export function DashboardPage() {
                   <Line
                     type="monotone"
                     dataKey="expenses"
-                    name="Расходы"
+                    name={t.dashboard.expenses}
                     stroke="#ef4444"
                     strokeWidth={2}
                     dot={{ fill: '#ef4444', strokeWidth: 2 }}
@@ -268,7 +271,7 @@ export function DashboardPage() {
               </ResponsiveContainer>
             ) : (
               <div className="h-[300px] flex items-center justify-center text-slate-400">
-                Нет данных за период
+                {t.dashboard.noData}
               </div>
             )}
           </CardContent>
@@ -279,7 +282,7 @@ export function DashboardPage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <BarChart3 className="h-5 w-5 text-slate-400" />
-              Расходы по категориям
+              {t.dashboard.expensesByCategory}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -314,7 +317,7 @@ export function DashboardPage() {
               </ResponsiveContainer>
             ) : (
               <div className="h-[300px] flex items-center justify-center text-slate-400">
-                Нет данных за период
+                {t.dashboard.noData}
               </div>
             )}
           </CardContent>
@@ -325,7 +328,7 @@ export function DashboardPage() {
       {expenseCategories.length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle>Детализация расходов</CardTitle>
+            <CardTitle>{t.dashboard.expenseDetails}</CardTitle>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={Math.max(300, expenseCategories.length * 45)}>
@@ -348,7 +351,7 @@ export function DashboardPage() {
                     boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
                   }}
                 />
-                <Bar dataKey="total" name="Сумма" radius={[0, 4, 4, 0]}>
+                <Bar dataKey="total" name={t.reports.amount} radius={[0, 4, 4, 0]}>
                   {expenseCategories.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={entry.color || COLORS[index % COLORS.length]} />
                   ))}
@@ -367,6 +370,7 @@ export function DashboardPage() {
         paymentMethods={paymentMethods}
         onSubmit={(data) => createMutation.mutate(data)}
         isLoading={createMutation.isPending}
+        t={t}
       />
     </div>
   )
@@ -388,6 +392,7 @@ interface QuickTransactionModalProps {
     enteredInIiko: boolean
   }) => void
   isLoading: boolean
+  t: Translations
 }
 
 function QuickTransactionModal({
@@ -397,6 +402,7 @@ function QuickTransactionModal({
   paymentMethods,
   onSubmit,
   isLoading,
+  t,
 }: QuickTransactionModalProps) {
   const [formData, setFormData] = useState({
     date: format(new Date(), 'yyyy-MM-dd'),
@@ -443,7 +449,7 @@ function QuickTransactionModal({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Быстрая запись"
+      title={t.quickTransaction.title}
       size="md"
     >
       <form onSubmit={handleSubmit} className="space-y-4">
@@ -463,7 +469,7 @@ function QuickTransactionModal({
             }}
           >
             <ArrowDownRight className="h-4 w-4 inline mr-1.5" />
-            Расход
+            {t.quickTransaction.expense}
           </button>
           <button
             type="button"
@@ -479,13 +485,13 @@ function QuickTransactionModal({
             }}
           >
             <ArrowUpRight className="h-4 w-4 inline mr-1.5" />
-            Доход
+            {t.quickTransaction.income}
           </button>
         </div>
 
-        {/* Amount - большое поле */}
+        {/* Amount */}
         <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1.5">Сумма (THB)</label>
+          <label className="block text-sm font-medium text-slate-700 mb-1.5">{t.quickTransaction.amount}</label>
           <Input
             type="number"
             step="0.01"
@@ -504,18 +510,18 @@ function QuickTransactionModal({
         {/* Date & Category */}
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1.5">Дата</label>
+            <label className="block text-sm font-medium text-slate-700 mb-1.5">{t.quickTransaction.date}</label>
             <DatePicker
               value={formData.date}
               onChange={(value) => setFormData({ ...formData, date: value })}
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1.5">Категория</label>
+            <label className="block text-sm font-medium text-slate-700 mb-1.5">{t.quickTransaction.category}</label>
             <Dropdown
               value={formData.categoryId}
               onChange={(value) => setFormData({ ...formData, categoryId: value })}
-              placeholder="Выберите"
+              placeholder={t.quickTransaction.selectPlaceholder}
               options={filteredCategories.map(c => ({ value: c.id.toString(), label: c.name }))}
             />
           </div>
@@ -524,20 +530,20 @@ function QuickTransactionModal({
         {/* Payment Method & Description */}
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1.5">Способ оплаты</label>
+            <label className="block text-sm font-medium text-slate-700 mb-1.5">{t.quickTransaction.paymentMethod}</label>
             <Dropdown
               value={formData.paymentMethodId}
               onChange={(value) => setFormData({ ...formData, paymentMethodId: value })}
-              placeholder="Выберите"
+              placeholder={t.quickTransaction.selectPlaceholder}
               options={paymentMethods.map(p => ({ value: p.id.toString(), label: p.name }))}
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1.5">Описание</label>
+            <label className="block text-sm font-medium text-slate-700 mb-1.5">{t.quickTransaction.description}</label>
             <Input
               value={formData.service}
               onChange={(e) => setFormData({ ...formData, service: e.target.value })}
-              placeholder="За что?"
+              placeholder={t.quickTransaction.whatFor}
               required
             />
           </div>
@@ -552,7 +558,7 @@ function QuickTransactionModal({
               onChange={(e) => setFormData({ ...formData, hasReceipt: e.target.checked })}
               className="h-4 w-4 rounded border-slate-300 text-primary focus:ring-primary"
             />
-            <span className="text-sm text-slate-600">Есть чек</span>
+            <span className="text-sm text-slate-600">{t.quickTransaction.hasReceipt}</span>
           </label>
           <label className="flex items-center gap-2 cursor-pointer">
             <input
@@ -561,7 +567,7 @@ function QuickTransactionModal({
               onChange={(e) => setFormData({ ...formData, enteredInIiko: e.target.checked })}
               className="h-4 w-4 rounded border-slate-300 text-primary focus:ring-primary"
             />
-            <span className="text-sm text-slate-600">В iiko</span>
+            <span className="text-sm text-slate-600">{t.quickTransaction.inIiko}</span>
           </label>
         </div>
 
@@ -579,12 +585,12 @@ function QuickTransactionModal({
           {isLoading ? (
             <div className="flex items-center gap-2">
               <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-              Сохранение...
+              {t.quickTransaction.saving}
             </div>
           ) : (
             <>
               <Plus className="h-5 w-5 mr-2" />
-              Добавить {transactionType === 'expense' ? 'расход' : 'доход'}
+              {transactionType === 'expense' ? t.quickTransaction.addExpense : t.quickTransaction.addIncome}
             </>
           )}
         </Button>

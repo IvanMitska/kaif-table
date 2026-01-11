@@ -1,4 +1,5 @@
 import { useAuth } from '@/context/AuthContext'
+import { useLanguage } from '@/context/LanguageContext'
 import { cn } from '@/lib/utils'
 import {
   BarChart3,
@@ -8,28 +9,32 @@ import {
   Home,
   LogOut,
   Menu,
+  Store,
   X,
 } from 'lucide-react'
 import { useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
+import { LanguageSwitcher } from './LanguageSwitcher'
 import { Button } from './ui/button'
 
 interface LayoutProps {
   children: React.ReactNode
 }
 
-const navigation = [
-  { name: 'Dashboard', href: '/', icon: Home },
-  { name: 'Транзакции', href: '/transactions', icon: FileSpreadsheet },
-  { name: 'Категории', href: '/categories', icon: FolderOpen },
-  { name: 'Отчёты', href: '/reports', icon: BarChart3 },
-]
-
 export function Layout({ children }: LayoutProps) {
   const { user, logout } = useAuth()
+  const { t } = useLanguage()
   const location = useLocation()
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+
+  const navigation = [
+    { name: t.nav.dashboard, href: '/', icon: Home },
+    { name: t.nav.transactions, href: '/transactions', icon: FileSpreadsheet },
+    { name: t.nav.categories, href: '/categories', icon: FolderOpen },
+    { name: t.nav.reports, href: '/reports', icon: BarChart3 },
+    { name: t.nav.iiko, href: '/iiko', icon: Store },
+  ]
 
   return (
     <div className="min-h-screen bg-background">
@@ -135,7 +140,7 @@ export function Layout({ children }: LayoutProps) {
             onClick={logout}
           >
             <LogOut className="h-4 w-4" />
-            {!sidebarCollapsed && <span className="ml-2">Выйти</span>}
+            {!sidebarCollapsed && <span className="ml-2">{t.nav.logout}</span>}
           </Button>
         </div>
       </aside>
@@ -146,18 +151,19 @@ export function Layout({ children }: LayoutProps) {
         sidebarCollapsed ? "lg:pl-20" : "lg:pl-64"
       )}>
         {/* Top bar */}
-        <header className="sticky top-0 z-30 h-16 bg-white/80 backdrop-blur-md border-b border-border/50 flex items-center px-4 lg:px-6">
-          <button
-            className="lg:hidden p-2 hover:bg-slate-100 rounded-lg mr-3"
-            onClick={() => setSidebarOpen(true)}
-          >
-            <Menu className="h-5 w-5" />
-          </button>
-          <div className="flex items-center gap-3">
+        <header className="sticky top-0 z-30 h-16 bg-white/80 backdrop-blur-md border-b border-border/50 flex items-center justify-between px-4 lg:px-6">
+          <div className="flex items-center">
+            <button
+              className="lg:hidden p-2 hover:bg-slate-100 rounded-lg mr-3"
+              onClick={() => setSidebarOpen(true)}
+            >
+              <Menu className="h-5 w-5" />
+            </button>
             <h1 className="text-lg font-semibold text-slate-900">
               {navigation.find(n => n.href === location.pathname)?.name || 'KAIF Finance'}
             </h1>
           </div>
+          <LanguageSwitcher />
         </header>
 
         {/* Page content */}

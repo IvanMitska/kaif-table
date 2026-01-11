@@ -4,7 +4,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Dropdown } from '@/components/ui/dropdown'
 import { Input } from '@/components/ui/input'
 import { Modal } from '@/components/ui/modal'
+import { useLanguage } from '@/context/LanguageContext'
 import { categoriesApi, paymentMethodsApi } from '@/lib/api'
+import type { Translations } from '@/lib/i18n'
 import { cn } from '@/lib/utils'
 import type { Category, PaymentMethod } from '@/types'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
@@ -12,6 +14,7 @@ import { CreditCard, Edit2, FolderOpen, Plus, Trash2, Wallet } from 'lucide-reac
 import { useState, useEffect } from 'react'
 
 export function CategoriesPage() {
+  const { t } = useLanguage()
   const queryClient = useQueryClient()
   const [activeTab, setActiveTab] = useState<'categories' | 'payment-methods'>('categories')
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -88,8 +91,8 @@ export function CategoriesPage() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h2 className="text-2xl font-bold text-slate-900">Справочники</h2>
-        <p className="text-slate-500 mt-1">Управление категориями и способами оплаты</p>
+        <h2 className="text-2xl font-bold text-slate-900">{t.categories.title}</h2>
+        <p className="text-slate-500 mt-1">{t.categories.subtitle}</p>
       </div>
 
       {/* Tabs */}
@@ -104,7 +107,7 @@ export function CategoriesPage() {
           onClick={() => setActiveTab('categories')}
         >
           <FolderOpen className="h-4 w-4" />
-          Категории
+          {t.categories.categoriesTab}
           <Badge variant="secondary" className="ml-1">{categories.length}</Badge>
         </button>
         <button
@@ -117,7 +120,7 @@ export function CategoriesPage() {
           onClick={() => setActiveTab('payment-methods')}
         >
           <CreditCard className="h-4 w-4" />
-          Способы оплаты
+          {t.categories.paymentMethodsTab}
           <Badge variant="secondary" className="ml-1">{paymentMethods.length}</Badge>
         </button>
       </div>
@@ -132,7 +135,7 @@ export function CategoriesPage() {
                 <div className="w-8 h-8 rounded-lg bg-red-100 flex items-center justify-center">
                   <FolderOpen className="h-4 w-4 text-red-600" />
                 </div>
-                Категории расходов
+                {t.categories.expenseCategories}
                 <Badge variant="destructive" className="ml-2">{expenseCategories.length}</Badge>
               </CardTitle>
               <Button
@@ -141,7 +144,7 @@ export function CategoriesPage() {
                 onClick={() => { setEditingCategory(null); setNewCategoryType('expense'); setIsModalOpen(true) }}
               >
                 <Plus className="h-4 w-4 mr-1" />
-                Добавить
+                {t.categories.add}
               </Button>
             </CardHeader>
             <CardContent>
@@ -172,7 +175,7 @@ export function CategoriesPage() {
                         size="icon"
                         className="h-8 w-8"
                         onClick={() => {
-                          if (confirm('Удалить категорию?')) {
+                          if (confirm(t.categories.deleteCategory)) {
                             deleteCategoryMutation.mutate(category.id)
                           }
                         }}
@@ -184,7 +187,7 @@ export function CategoriesPage() {
                 ))}
                 {expenseCategories.length === 0 && (
                   <div className="text-center py-8 text-slate-400">
-                    Нет категорий расходов
+                    {t.categories.noExpenseCategories}
                   </div>
                 )}
               </div>
@@ -199,7 +202,7 @@ export function CategoriesPage() {
                 <div className="w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center">
                   <FolderOpen className="h-4 w-4 text-emerald-600" />
                 </div>
-                Категории доходов
+                {t.categories.incomeCategories}
                 <Badge variant="success" className="ml-2">{incomeCategories.length}</Badge>
               </CardTitle>
               <Button
@@ -208,7 +211,7 @@ export function CategoriesPage() {
                 onClick={() => { setEditingCategory(null); setNewCategoryType('income'); setIsModalOpen(true) }}
               >
                 <Plus className="h-4 w-4 mr-1" />
-                Добавить
+                {t.categories.add}
               </Button>
             </CardHeader>
             <CardContent>
@@ -239,7 +242,7 @@ export function CategoriesPage() {
                         size="icon"
                         className="h-8 w-8"
                         onClick={() => {
-                          if (confirm('Удалить категорию?')) {
+                          if (confirm(t.categories.deleteCategory)) {
                             deleteCategoryMutation.mutate(category.id)
                           }
                         }}
@@ -251,7 +254,7 @@ export function CategoriesPage() {
                 ))}
                 {incomeCategories.length === 0 && (
                   <div className="text-center py-8 text-slate-400">
-                    Нет категорий доходов
+                    {t.categories.noIncomeCategories}
                   </div>
                 )}
               </div>
@@ -267,8 +270,8 @@ export function CategoriesPage() {
                 <Wallet className="h-5 w-5 text-violet-600" />
               </div>
               <div>
-                <span className="block">Способы оплаты</span>
-                <span className="text-sm font-normal text-slate-500">Управление методами платежей</span>
+                <span className="block">{t.categories.paymentMethods}</span>
+                <span className="text-sm font-normal text-slate-500">{t.categories.paymentMethodsSubtitle}</span>
               </div>
             </CardTitle>
             <Button
@@ -276,7 +279,7 @@ export function CategoriesPage() {
               onClick={() => { setEditingPaymentMethod(null); setIsModalOpen(true) }}
             >
               <Plus className="h-4 w-4 mr-2" />
-              Добавить способ
+              {t.categories.addMethod}
             </Button>
           </CardHeader>
           <CardContent>
@@ -306,7 +309,7 @@ export function CategoriesPage() {
                       size="icon"
                       className="h-8 w-8"
                       onClick={() => {
-                        if (confirm('Удалить способ оплаты?')) {
+                        if (confirm(t.categories.deletePaymentMethod)) {
                           deletePaymentMethodMutation.mutate(pm.id)
                         }
                       }}
@@ -318,7 +321,7 @@ export function CategoriesPage() {
               ))}
               {paymentMethods.length === 0 && (
                 <div className="col-span-full text-center py-12 text-slate-400">
-                  Нет способов оплаты
+                  {t.categories.noPaymentMethods}
                 </div>
               )}
             </div>
@@ -341,6 +344,7 @@ export function CategoriesPage() {
             }
           }}
           isLoading={createCategoryMutation.isPending || updateCategoryMutation.isPending}
+          t={t}
         />
       )}
 
@@ -358,6 +362,7 @@ export function CategoriesPage() {
             }
           }}
           isLoading={createPaymentMethodMutation.isPending || updatePaymentMethodMutation.isPending}
+          t={t}
         />
       )}
     </div>
@@ -371,9 +376,10 @@ interface CategoryModalProps {
   defaultType: 'expense' | 'income'
   onSubmit: (data: Partial<Category>) => void
   isLoading: boolean
+  t: Translations
 }
 
-function CategoryModal({ isOpen, onClose, category, defaultType, onSubmit, isLoading }: CategoryModalProps) {
+function CategoryModal({ isOpen, onClose, category, defaultType, onSubmit, isLoading, t }: CategoryModalProps) {
   const [formData, setFormData] = useState({
     name: '',
     type: defaultType as 'income' | 'expense',
@@ -411,32 +417,32 @@ function CategoryModal({ isOpen, onClose, category, defaultType, onSubmit, isLoa
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={category ? 'Редактировать категорию' : 'Новая категория'}
+      title={category ? t.categoryModal.editTitle : t.categoryModal.addTitle}
     >
       <form onSubmit={handleSubmit} className="space-y-5">
         <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1.5">Название</label>
+          <label className="block text-sm font-medium text-slate-700 mb-1.5">{t.categoryModal.name}</label>
           <Input
             value={formData.name}
             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-            placeholder="Введите название категории"
+            placeholder={t.categoryModal.namePlaceholder}
             className="bg-white"
             required
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1.5">Тип</label>
+          <label className="block text-sm font-medium text-slate-700 mb-1.5">{t.categoryModal.type}</label>
           <Dropdown
             value={formData.type}
             onChange={(value) => setFormData({ ...formData, type: value as 'income' | 'expense' })}
             options={[
-              { value: 'expense', label: 'Расход' },
-              { value: 'income', label: 'Доход' },
+              { value: 'expense', label: t.categoryModal.expense },
+              { value: 'income', label: t.categoryModal.income },
             ]}
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-slate-700 mb-2">Цвет</label>
+          <label className="block text-sm font-medium text-slate-700 mb-2">{t.categoryModal.color}</label>
           <div className="flex flex-wrap gap-2 mb-3">
             {presetColors.map((color) => (
               <button
@@ -471,7 +477,7 @@ function CategoryModal({ isOpen, onClose, category, defaultType, onSubmit, isLoa
         </div>
         <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">
           <Button type="button" variant="outline" onClick={onClose}>
-            Отмена
+            {t.categoryModal.cancel}
           </Button>
           <Button
             type="submit"
@@ -481,9 +487,9 @@ function CategoryModal({ isOpen, onClose, category, defaultType, onSubmit, isLoa
             {isLoading ? (
               <div className="flex items-center gap-2">
                 <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                Сохранение...
+                {t.categoryModal.saving}
               </div>
-            ) : 'Сохранить'}
+            ) : t.categoryModal.save}
           </Button>
         </div>
       </form>
@@ -497,9 +503,10 @@ interface PaymentMethodModalProps {
   paymentMethod: PaymentMethod | null
   onSubmit: (data: Partial<PaymentMethod>) => void
   isLoading: boolean
+  t: Translations
 }
 
-function PaymentMethodModal({ isOpen, onClose, paymentMethod, onSubmit, isLoading }: PaymentMethodModalProps) {
+function PaymentMethodModal({ isOpen, onClose, paymentMethod, onSubmit, isLoading, t }: PaymentMethodModalProps) {
   const [name, setName] = useState('')
 
   useEffect(() => {
@@ -515,22 +522,22 @@ function PaymentMethodModal({ isOpen, onClose, paymentMethod, onSubmit, isLoadin
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={paymentMethod ? 'Редактировать способ оплаты' : 'Новый способ оплаты'}
+      title={paymentMethod ? t.paymentMethodModal.editTitle : t.paymentMethodModal.addTitle}
     >
       <form onSubmit={handleSubmit} className="space-y-5">
         <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1.5">Название</label>
+          <label className="block text-sm font-medium text-slate-700 mb-1.5">{t.paymentMethodModal.name}</label>
           <Input
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="Например: Наличные, Карта, Перевод"
+            placeholder={t.paymentMethodModal.namePlaceholder}
             className="bg-white"
             required
           />
         </div>
         <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">
           <Button type="button" variant="outline" onClick={onClose}>
-            Отмена
+            {t.paymentMethodModal.cancel}
           </Button>
           <Button
             type="submit"
@@ -540,9 +547,9 @@ function PaymentMethodModal({ isOpen, onClose, paymentMethod, onSubmit, isLoadin
             {isLoading ? (
               <div className="flex items-center gap-2">
                 <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                Сохранение...
+                {t.paymentMethodModal.saving}
               </div>
-            ) : 'Сохранить'}
+            ) : t.paymentMethodModal.save}
           </Button>
         </div>
       </form>

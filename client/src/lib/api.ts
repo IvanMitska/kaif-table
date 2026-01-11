@@ -147,4 +147,68 @@ export const exportApi = {
   },
 }
 
+// iiko Integration
+export interface IikoSettings {
+  id: number
+  serverUrl: string
+  login: string
+  isActive: boolean
+  lastSyncAt: string | null
+}
+
+export interface IikoSyncResult {
+  success: boolean
+  itemsImported: number
+  summary: {
+    totalAmount: number
+    totalQuantity: number
+    totalDiscount: number
+  }
+}
+
+export interface IikoRevenue {
+  totalRevenue: number
+  totalQuantity: number
+  orderCount: number
+  averageCheck: number
+  byCategory: Array<{ category: string; amount: number; quantity: number }>
+  byDay: Array<{ date: string; amount: number }>
+  byHour: Array<{ hour: number; amount: number }>
+}
+
+export interface IikoTopItem {
+  dishId: string
+  dishName: string
+  category: string
+  quantity: number
+  amount: number
+}
+
+export const iikoApi = {
+  getSettings: async (): Promise<IikoSettings | null> => {
+    const { data } = await api.get('/iiko/settings')
+    return data
+  },
+  saveSettings: async (settings: { serverUrl: string; login: string; password: string }): Promise<IikoSettings> => {
+    const { data } = await api.post('/iiko/settings', settings)
+    return data
+  },
+  testConnection: async (): Promise<{ success: boolean; message: string }> => {
+    const { data } = await api.post('/iiko/test-connection')
+    return data
+  },
+  sync: async (dateFrom: string, dateTo: string): Promise<IikoSyncResult> => {
+    const { data } = await api.post('/iiko/sync', { dateFrom, dateTo })
+    return data
+  },
+  getRevenue: async (dateFrom: string, dateTo: string): Promise<IikoRevenue> => {
+    const { data } = await api.get('/iiko/revenue', { params: { dateFrom, dateTo } })
+    return data
+  },
+  getTopItems: async (dateFrom: string, dateTo: string, limit?: number): Promise<IikoTopItem[]> => {
+    const { data } = await api.get('/iiko/top-items', { params: { dateFrom, dateTo, limit } })
+    return data
+  },
+}
+
 export default api

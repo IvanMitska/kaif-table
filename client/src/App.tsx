@@ -1,7 +1,9 @@
 import { Layout } from '@/components/Layout'
 import { AuthProvider, useAuth } from '@/context/AuthContext'
+import { LanguageProvider } from '@/context/LanguageContext'
 import { CategoriesPage } from '@/pages/CategoriesPage'
 import { DashboardPage } from '@/pages/DashboardPage'
+import { IikoSettingsPage } from '@/pages/IikoSettingsPage'
 import { LoginPage } from '@/pages/LoginPage'
 import { ReportsPage } from '@/pages/ReportsPage'
 import { TransactionsPage } from '@/pages/TransactionsPage'
@@ -84,6 +86,14 @@ function AppRoutes() {
           </ProtectedRoute>
         }
       />
+      <Route
+        path="/iiko"
+        element={
+          <ProtectedRoute>
+            <IikoSettingsPage />
+          </ProtectedRoute>
+        }
+      />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   )
@@ -92,11 +102,13 @@ function AppRoutes() {
 export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
-        <AuthProvider>
-          <AppRoutes />
-        </AuthProvider>
-      </BrowserRouter>
+      <LanguageProvider>
+        <BrowserRouter>
+          <AuthProvider>
+            <AppRoutes />
+          </AuthProvider>
+        </BrowserRouter>
+      </LanguageProvider>
     </QueryClientProvider>
   )
 }

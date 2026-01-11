@@ -1,0 +1,353 @@
+import axios from 'axios'
+
+interface IikoConfig {
+  serverUrl: string // e.g., https://your-iiko-server:443
+  login: string
+  password: string // SHA1 hash of password
+}
+
+interface IikoAuthResponse {
+  token: string
+}
+
+interface OlapReportFilter {
+  dateFrom: string // YYYY-MM-DD
+  dateTo: string // YYYY-MM-DD
+  departmentId?: string
+}
+
+interface OlapSalesItem {
+  dishId: string
+  dishName: string
+  dishCode: string
+  dishCategory: string
+  dishCategoryId: string
+  dishGroup: string
+  dishGroupId: string
+  quantity: number
+  amount: number
+  discountSum: number
+  orderNum: string
+  openTime: string
+  departmentId: string
+  departmentName: string
+}
+
+interface OlapReportResponse {
+  data: OlapSalesItem[]
+  summary: {
+    totalAmount: number
+    totalQuantity: number
+    totalDiscount: number
+  }
+}
+
+export class IikoService {
+  private config: IikoConfig
+  private token: string | null = null
+  private tokenExpiry: Date | null = null
+
+  constructor(config: IikoConfig) {
+    this.config = config
+  }
+
+  /**
+   * Authenticate with iiko Server API
+   * Token is valid for ~15 minutes
+   */
+  async authenticate(): Promise<string> {
+    // Check if we have a valid token
+    if (this.token && this.tokenExpiry && new Date() < this.tokenExpiry) {
+      return this.token
+    }
+
+    try {
+      const response = await axios.get<string>(
+        `${this.config.serverUrl}/resto/api/auth`,
+        {
+          params: {
+            login: this.config.login,
+            pass: this.config.password,
+          },
+          timeout: 10000,
+        }
+      )
+
+      this.token = response.data
+      // Token expires in 15 minutes, we'll refresh after 10
+      this.tokenExpiry = new Date(Date.now() + 10 * 60 * 1000)
+
+      return this.token!
+    } catch (error) {
+      console.error('iiko authentication failed:', error)
+      throw new Error('Failed to authenticate with iiko server')
+    }
+  }
+
+  /**
+   * Logout and release the API license
+   */
+  async logout(): Promise<void> {
+    if (!this.token) return
+
+    try {
+      await axios.get(`${this.config.serverUrl}/resto/api/logout`, {
+        params: { key: this.token },
+        timeout: 5000,
+      })
+    } catch (error) {
+      console.error('iiko logout failed:', error)
+    } finally {
+      this.token = null
+      this.tokenExpiry = null
+    }
+  }
+
+  /**
+   * Get OLAP sales report with detailed item breakdown
+   */
+  async getSalesReport(filter: OlapReportFilter): Promise<OlapReportResponse> {
+    const token = await this.authenticate()
+
+    try {
+      const requestBody = {
+        reportType: 'SALES',
+        buildSummary: 'true',
+        groupByRowFields: [
+          'Department.Id',
+          'Department',
+          'DishId',
+          'DishName',
+          'DishCode',
+          'DishCategory',
+          'DishCategory.Id',
+          'DishGroup',
+          'DishGroup.Id',
+          'OpenTime',
+          'OrderNum',
+        ],
+        groupByColFields: [],
+        aggregateFields: [
+          'DishAmountInt',
+          'DishDiscountSumInt',
+          'DishSumInt',
+        ],
+        filters: {
+          'OpenDate.Typed': {
+            filterType: 'DateRange',
+            periodType: 'CUSTOM',
+            from: filter.dateFrom,
+            to: filter.dateTo,
+            includeLow: true,
+            includeHigh: true,
+          },
+          ...(filter.departmentId && {
+            'Department.Id': {
+              filterType: 'IncludeValues',
+              values: [filter.departmentId],
+            },
+          }),
+        },
+      }
+
+      const response = await axios.post(
+        `${this.config.serverUrl}/resto/api/v2/reports/olap`,
+        requestBody,
+        {
+          params: { key: token },
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          timeout: 30000,
+        }
+      )
+
+      return this.parseOlapResponse(response.data)
+    } catch (error) {
+      console.error('Failed to get iiko sales report:', error)
+      throw new Error('Failed to fetch sales report from iiko')
+    }
+  }
+
+  /**
+   * Get revenue summary for a period
+   */
+  async getRevenueSummary(filter: OlapReportFilter): Promise<{
+    totalRevenue: number
+    totalOrders: number
+    itemsSold: number
+    averageCheck: number
+    byCategory: Array<{ category: string; amount: number; quantity: number }>
+    byHour: Array<{ hour: number; amount: number }>
+  }> {
+    const report = await this.getSalesReport(filter)
+
+    // Group by category
+    const categoryMap = new Map<string, { amount: number; quantity: number }>()
+    const hourMap = new Map<number, number>()
+    const orderSet = new Set<string>()
+
+    for (const item of report.data) {
+      orderSet.add(item.orderNum)
+
+      // By category
+      const existing = categoryMap.get(item.dishCategory) || { amount: 0, quantity: 0 }
+      categoryMap.set(item.dishCategory, {
+        amount: existing.amount + item.amount,
+        quantity: existing.quantity + item.quantity,
+      })
+
+      // By hour
+      const hour = new Date(item.openTime).getHours()
+      hourMap.set(hour, (hourMap.get(hour) || 0) + item.amount)
+    }
+
+    const totalOrders = orderSet.size
+    const averageCheck = totalOrders > 0 ? report.summary.totalAmount / totalOrders : 0
+
+    return {
+      totalRevenue: report.summary.totalAmount,
+      totalOrders,
+      itemsSold: report.summary.totalQuantity,
+      averageCheck,
+      byCategory: Array.from(categoryMap.entries()).map(([category, data]) => ({
+        category,
+        amount: data.amount,
+        quantity: data.quantity,
+      })),
+      byHour: Array.from(hourMap.entries())
+        .map(([hour, amount]) => ({ hour, amount }))
+        .sort((a, b) => a.hour - b.hour),
+    }
+  }
+
+  /**
+   * Get list of departments/restaurants
+   */
+  async getDepartments(): Promise<Array<{ id: string; name: string }>> {
+    const token = await this.authenticate()
+
+    try {
+      const response = await axios.get(
+        `${this.config.serverUrl}/resto/api/corporation/departments`,
+        {
+          params: { key: token },
+          timeout: 10000,
+        }
+      )
+
+      // Parse XML response or JSON depending on iiko version
+      const departments = this.parseDepartmentsResponse(response.data)
+      return departments
+    } catch (error) {
+      console.error('Failed to get iiko departments:', error)
+      throw new Error('Failed to fetch departments from iiko')
+    }
+  }
+
+  /**
+   * Parse OLAP response from iiko
+   */
+  private parseOlapResponse(data: any): OlapReportResponse {
+    const items: OlapSalesItem[] = []
+    let totalAmount = 0
+    let totalQuantity = 0
+    let totalDiscount = 0
+
+    // Handle different response formats
+    const rows = data.data || data.rows || []
+
+    for (const row of rows) {
+      const item: OlapSalesItem = {
+        dishId: row['DishId'] || row['Dish.Id'] || '',
+        dishName: row['DishName'] || row['Dish.Name'] || '',
+        dishCode: row['DishCode'] || row['Dish.Code'] || '',
+        dishCategory: row['DishCategory'] || row['Dish.Category'] || '',
+        dishCategoryId: row['DishCategory.Id'] || '',
+        dishGroup: row['DishGroup'] || row['Dish.Group'] || '',
+        dishGroupId: row['DishGroup.Id'] || '',
+        quantity: parseFloat(row['DishAmountInt'] || row['Amount'] || 0),
+        amount: parseFloat(row['DishSumInt'] || row['Sum'] || 0),
+        discountSum: parseFloat(row['DishDiscountSumInt'] || row['Discount'] || 0),
+        orderNum: row['OrderNum'] || row['Order.Number'] || '',
+        openTime: row['OpenTime'] || row['OpenDate'] || '',
+        departmentId: row['Department.Id'] || '',
+        departmentName: row['Department'] || row['Department.Name'] || '',
+      }
+
+      items.push(item)
+      totalAmount += item.amount
+      totalQuantity += item.quantity
+      totalDiscount += item.discountSum
+    }
+
+    // Check for summary in response
+    if (data.summary) {
+      totalAmount = parseFloat(data.summary.DishSumInt || totalAmount)
+      totalQuantity = parseFloat(data.summary.DishAmountInt || totalQuantity)
+      totalDiscount = parseFloat(data.summary.DishDiscountSumInt || totalDiscount)
+    }
+
+    return {
+      data: items,
+      summary: {
+        totalAmount,
+        totalQuantity,
+        totalDiscount,
+      },
+    }
+  }
+
+  /**
+   * Parse departments response
+   */
+  private parseDepartmentsResponse(data: any): Array<{ id: string; name: string }> {
+    // Handle JSON response
+    if (Array.isArray(data)) {
+      return data.map((d: any) => ({
+        id: d.id || d.Id,
+        name: d.name || d.Name,
+      }))
+    }
+
+    // Handle object with departments array
+    if (data.corporateItemDtoes || data.departments) {
+      const deps = data.corporateItemDtoes || data.departments
+      return deps.map((d: any) => ({
+        id: d.id || d.Id,
+        name: d.name || d.Name,
+      }))
+    }
+
+    return []
+  }
+
+  /**
+   * Test connection to iiko server
+   */
+  async testConnection(): Promise<{ success: boolean; message: string }> {
+    try {
+      await this.authenticate()
+      await this.logout()
+      return { success: true, message: 'Successfully connected to iiko server' }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unknown error'
+      return { success: false, message }
+    }
+  }
+}
+
+// Singleton instance for the app
+let iikoServiceInstance: IikoService | null = null
+
+export function getIikoService(config?: IikoConfig): IikoService | null {
+  if (config) {
+    iikoServiceInstance = new IikoService(config)
+  }
+  return iikoServiceInstance
+}
+
+export function initIikoService(config: IikoConfig): IikoService {
+  iikoServiceInstance = new IikoService(config)
+  return iikoServiceInstance
+}

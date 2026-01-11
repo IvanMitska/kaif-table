@@ -9,6 +9,7 @@ import authRoutes from './routes/auth.js'
 import categoriesRoutes from './routes/categories.js'
 import dashboardRoutes from './routes/dashboard.js'
 import exportRoutes from './routes/export.js'
+import iikoRoutes from './routes/iiko.js'
 import paymentMethodsRoutes from './routes/paymentMethods.js'
 import transactionsRoutes from './routes/transactions.js'
 import usersRoutes from './routes/users.js'
@@ -50,6 +51,7 @@ app.use('/api/payment-methods', paymentMethodsRoutes)
 app.use('/api/dashboard', dashboardRoutes)
 app.use('/api/users', usersRoutes)
 app.use('/api/export', exportRoutes)
+app.use('/api/iiko', iikoRoutes)
 
 // Health check
 app.get('/api/health', (_, res) => {
