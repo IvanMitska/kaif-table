@@ -390,26 +390,48 @@ export class IikoService {
         return `${day}.${month}.${year}`
       }
 
-      const response = await axios.get(
-        `${this.config.serverUrl}/resto/service/reports/report.jspx`,
-        {
-          params: {
-            key: token,
-            dateFrom: formatDate(filter.dateFrom),
-            dateTo: formatDate(filter.dateTo),
-            presetId: 'c459326a-23d5-4088-9235-880634607c22', // "Отчет по дням новый"
-          },
-          timeout: 30000,
-          responseType: 'text',
-        }
-      )
+      const url = `${this.config.serverUrl}/resto/service/reports/report.jspx`
+      const params = {
+        key: token,
+        dateFrom: formatDate(filter.dateFrom),
+        dateTo: formatDate(filter.dateTo),
+        presetId: 'c459326a-23d5-4088-9235-880634607c22',
+      }
 
-      // Parse XML response
+      console.log('Daily report URL:', url)
+      console.log('Daily report params:', params)
+
+      const response = await axios.get(url, {
+        params,
+        timeout: 30000,
+        responseType: 'text',
+        // Try with cookie-style auth
+        headers: {
+          'Cookie': `key=${token}`,
+        },
+      })
+
       const xmlData = response.data
-      return this.parseDailyReportXml(xmlData)
+      console.log('Daily report response length:', xmlData?.length)
+      console.log('Daily report response preview:', xmlData?.substring(0, 500))
+
+      // Check if we got XML or HTML error
+      if (xmlData?.includes('<data>')) {
+        return this.parseDailyReportXml(xmlData)
+      } else {
+        return {
+          success: false,
+          error: 'Report did not return expected XML format',
+          rawResponsePreview: xmlData?.substring(0, 1000),
+        }
+      }
     } catch (error: any) {
       console.error('Daily report error:', error.response?.data || error.message)
-      return { error: error.response?.data || error.message }
+      return {
+        success: false,
+        error: error.response?.data || error.message,
+        status: error.response?.status,
+      }
     }
   }
 
