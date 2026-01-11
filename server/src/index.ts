@@ -1,5 +1,7 @@
 import cors from 'cors'
 import express from 'express'
+import path from 'path'
+import { fileURLToPath } from 'url'
 import { PrismaClient } from '@prisma/client'
 
 import authRoutes from './routes/auth.js'
@@ -10,15 +12,25 @@ import paymentMethodsRoutes from './routes/paymentMethods.js'
 import transactionsRoutes from './routes/transactions.js'
 import usersRoutes from './routes/users.js'
 
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
+
 export const prisma = new PrismaClient()
 
 const app = express()
 const PORT = process.env.PORT || 3001
 
-app.use(cors())
+// CORS configuration
+app.use(cors({
+  origin: process.env.NODE_ENV === 'production'
+    ? true
+    : ['http://localhost:5173', 'http://localhost:3000'],
+  credentials: true
+}))
+
 app.use(express.json())
 
-// Routes
+// API Routes
 app.use('/api/auth', authRoutes)
 app.use('/api/transactions', transactionsRoutes)
 app.use('/api/categories', categoriesRoutes)
@@ -31,6 +43,19 @@ app.use('/api/export', exportRoutes)
 app.get('/api/health', (_, res) => {
   res.json({ status: 'ok' })
 })
+
+// Serve static files in production
+if (process.env.NODE_ENV === 'production') {
+  const clientBuildPath = path.join(__dirname, '../../client/dist')
+  app.use(express.static(clientBuildPath))
+
+  // Handle SPA routing - serve index.html for all non-API routes
+  app.get('*', (req, res) => {
+    if (!req.path.startsWith('/api')) {
+      res.sendFile(path.join(clientBuildPath, 'index.html'))
+    }
+  })
+}
 
 // Error handler
 app.use((err: Error, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
