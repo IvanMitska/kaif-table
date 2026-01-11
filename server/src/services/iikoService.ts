@@ -147,15 +147,15 @@ export class IikoService {
             includeLow: true,
             includeHigh: true,
           },
-          // Exclude deleted orders
+          // Exclude deleted orders (use ExcludeValues with DELETED)
           'OrderDeleted': {
-            filterType: 'IncludeValues',
-            values: ['NOT_DELETED'],
+            filterType: 'ExcludeValues',
+            values: ['DELETED'],
           },
           // Exclude storned/voided items
           'Storned': {
-            filterType: 'IncludeValues',
-            values: ['NOT_STORNED'],
+            filterType: 'ExcludeValues',
+            values: ['STORNED'],
           },
           ...(filter.departmentId && {
             'Department.Id': {
