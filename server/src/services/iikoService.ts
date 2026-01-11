@@ -142,8 +142,7 @@ export class IikoService {
           'DishSumInt',
         ],
         filters: {
-          // Use CloseDate instead of OpenDate for accurate closed orders reporting
-          'CloseDate.Typed': {
+          'OpenDate.Typed': {
             filterType: 'DateRange',
             periodType: 'CUSTOM',
             from: filter.dateFrom,
@@ -392,7 +391,7 @@ export class IikoService {
           'DishSumInt',
         ],
         filters: {
-          'CloseDate.Typed': {
+          'OpenDate.Typed': {
             filterType: 'DateRange',
             periodType: 'CUSTOM',
             from: filter.dateFrom,
