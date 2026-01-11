@@ -78,9 +78,10 @@ export class IikoService {
       this.tokenExpiry = new Date(Date.now() + 10 * 60 * 1000)
 
       return this.token!
-    } catch (error) {
+    } catch (error: any) {
       console.error('iiko authentication failed:', error)
-      throw new Error('Failed to authenticate with iiko server')
+      const message = error.response?.data || error.message || 'Unknown error'
+      throw new Error(`Failed to authenticate with iiko server: ${message}`)
     }
   }
 
