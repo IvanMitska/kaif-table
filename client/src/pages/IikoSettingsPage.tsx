@@ -407,7 +407,7 @@ export function IikoSettingsPage() {
                           <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                         ))}
                       </Pie>
-                      <Tooltip formatter={(value: number) => formatCurrency(value)} />
+                      <Tooltip formatter={(value) => formatCurrency(Number(value) || 0)} />
                     </PieChart>
                   </ResponsiveContainer>
                 ) : (
@@ -441,7 +441,7 @@ export function IikoSettingsPage() {
                       />
                       <YAxis tickFormatter={(value) => `${(value / 1000).toFixed(0)}k`} />
                       <Tooltip
-                        formatter={(value: number) => formatCurrency(value)}
+                        formatter={(value) => formatCurrency(Number(value) || 0)}
                         labelFormatter={(label) => format(new Date(label), 'dd.MM.yyyy')}
                       />
                       <Bar dataKey="amount" fill="#6366f1" radius={[4, 4, 0, 0]} />
