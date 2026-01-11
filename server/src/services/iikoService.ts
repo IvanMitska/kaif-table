@@ -376,6 +376,43 @@ export class IikoService {
   }
 
   /**
+   * Get store operations report - detailed product sales
+   */
+  async getProductSalesReport(filter: OlapReportFilter): Promise<any> {
+    const token = await this.authenticate()
+
+    const endpoints = [
+      '/resto/api/reports/store/productSales',
+      '/resto/api/reports/sales/by-product',
+      '/resto/api/v2/reports/productExpense',
+      '/resto/api/reports/productSales',
+    ]
+
+    for (const endpoint of endpoints) {
+      try {
+        const response = await axios.get(
+          `${this.config.serverUrl}${endpoint}`,
+          {
+            params: {
+              key: token,
+              from: filter.dateFrom,
+              to: filter.dateTo,
+              dateFrom: filter.dateFrom,
+              dateTo: filter.dateTo,
+            },
+            timeout: 15000,
+          }
+        )
+        return { endpoint, data: response.data }
+      } catch (error: any) {
+        console.log(`Endpoint ${endpoint} failed:`, error.response?.status)
+      }
+    }
+
+    return { error: 'No working endpoint found' }
+  }
+
+  /**
    * Get orders list - to see individual orders
    */
   async getOrders(filter: OlapReportFilter): Promise<any> {

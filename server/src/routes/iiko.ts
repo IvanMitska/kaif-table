@@ -365,6 +365,11 @@ router.get('/alt-api', async (req: AuthRequest, res) => {
         dateFrom: dateFrom as string,
         dateTo: dateTo as string,
       })
+    } else if (type === 'products') {
+      result = await service.getProductSalesReport({
+        dateFrom: dateFrom as string,
+        dateTo: dateTo as string,
+      })
     } else {
       result = await service.getSalesByDepartment({
         dateFrom: dateFrom as string,
