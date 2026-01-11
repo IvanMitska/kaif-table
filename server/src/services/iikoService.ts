@@ -62,8 +62,12 @@ export class IikoService {
     }
 
     try {
+      const authUrl = `${this.config.serverUrl}/resto/api/auth`
+      console.log('iiko auth URL:', authUrl)
+      console.log('iiko login:', this.config.login)
+
       const response = await axios.get<string>(
-        `${this.config.serverUrl}/resto/api/auth`,
+        authUrl,
         {
           params: {
             login: this.config.login,

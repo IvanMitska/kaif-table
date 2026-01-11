@@ -41,7 +41,11 @@ router.get('/settings', async (_req: AuthRequest, res) => {
 // Save iiko settings
 router.post('/settings', async (req: AuthRequest, res) => {
   try {
-    const { serverUrl, login, password } = req.body
+    const { serverUrl: rawUrl, login: rawLogin, password } = req.body
+
+    // Clean up inputs
+    const serverUrl = rawUrl?.trim().replace(/\/+$/, '') // Remove trailing slashes
+    const login = rawLogin?.trim()
 
     if (!serverUrl || !login || !password) {
       return res.status(400).json({ message: 'Server URL, login and password are required' })
