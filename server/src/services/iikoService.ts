@@ -168,9 +168,10 @@ export class IikoService {
       )
 
       return this.parseOlapResponse(response.data)
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to get iiko sales report:', error)
-      throw new Error('Failed to fetch sales report from iiko')
+      const message = error.response?.data || error.message || 'Unknown error'
+      throw new Error(`Failed to fetch sales report from iiko: ${JSON.stringify(message)}`)
     }
   }
 

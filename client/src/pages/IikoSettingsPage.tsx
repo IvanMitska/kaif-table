@@ -52,7 +52,7 @@ export function IikoSettingsPage() {
   const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null)
 
   // Sync result
-  const [syncResult, setSyncResult] = useState<{ success: boolean; itemsImported: number } | null>(null)
+  const [syncResult, setSyncResult] = useState<{ success: boolean; itemsImported: number; message?: string } | null>(null)
 
   // Get settings
   const { data: settings, isLoading: settingsLoading } = useQuery<IikoSettings | null>({
@@ -106,13 +106,14 @@ export function IikoSettingsPage() {
   const syncMutation = useMutation({
     mutationFn: () => iikoApi.sync(syncDateFrom, syncDateTo),
     onSuccess: (result) => {
-      setSyncResult({ success: result.success, itemsImported: result.itemsImported })
+      setSyncResult({ success: result.success, itemsImported: result.itemsImported, message: '' })
       queryClient.invalidateQueries({ queryKey: ['iiko-settings'] })
       queryClient.invalidateQueries({ queryKey: ['iiko-revenue'] })
       queryClient.invalidateQueries({ queryKey: ['iiko-top-items'] })
     },
-    onError: () => {
-      setSyncResult({ success: false, itemsImported: 0 })
+    onError: (error: any) => {
+      const message = error.response?.data?.message || error.message || t.iiko.syncFailed
+      setSyncResult({ success: false, itemsImported: 0, message })
     },
   })
 
@@ -283,7 +284,7 @@ export function IikoSettingsPage() {
                 <span className="text-sm">
                   {syncResult.success
                     ? `${t.iiko.syncSuccess}: ${syncResult.itemsImported} ${t.iiko.itemsImported}`
-                    : t.iiko.syncFailed}
+                    : (syncResult.message || t.iiko.syncFailed)}
                 </span>
               </div>
             )}

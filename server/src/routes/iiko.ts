@@ -202,9 +202,10 @@ router.post('/sync', async (req: AuthRequest, res) => {
       itemsImported: report.data.length,
       summary: report.summary,
     })
-  } catch (error) {
+  } catch (error: any) {
     console.error('Sync error:', error)
-    res.status(500).json({ message: 'Failed to sync data from iiko' })
+    const message = error.message || 'Failed to sync data from iiko'
+    res.status(500).json({ message })
   }
 })
 
