@@ -24,12 +24,17 @@ const PORT = process.env.PORT || 3001
 // Debug logging
 console.log('=== Server Starting ===')
 console.log('NODE_ENV:', process.env.NODE_ENV)
+console.log('RAILWAY_ENVIRONMENT:', process.env.RAILWAY_ENVIRONMENT)
 console.log('PORT:', PORT)
 console.log('CWD:', process.cwd())
 
+// Detect production mode (Railway sets RAILWAY_ENVIRONMENT)
+const isProduction = process.env.NODE_ENV === 'production' || process.env.RAILWAY_ENVIRONMENT === 'production'
+console.log('isProduction:', isProduction)
+
 // CORS configuration
 app.use(cors({
-  origin: process.env.NODE_ENV === 'production'
+  origin: isProduction
     ? true
     : ['http://localhost:5173', 'http://localhost:3000'],
   credentials: true
@@ -53,8 +58,9 @@ app.get('/api/health', (_, res) => {
 
 // Serve static files in production
 console.log('Checking production mode...')
-if (process.env.NODE_ENV === 'production') {
-  const clientBuildPath = path.join(process.cwd(), 'client/dist')
+if (isProduction) {
+  // CWD is /app/server, so go up one level to reach /app/client/dist
+  const clientBuildPath = path.join(process.cwd(), '../client/dist')
   console.log('Production mode enabled!')
   console.log('Serving static files from:', clientBuildPath)
 
