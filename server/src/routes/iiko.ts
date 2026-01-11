@@ -365,8 +365,9 @@ router.get('/alt-api', async (req: AuthRequest, res) => {
         dateFrom: dateFrom as string,
         dateTo: dateTo as string,
       })
-    } else if (type === 'products') {
-      result = await service.getProductSalesReport({
+    } else if (type === 'daily') {
+      // Use the accurate "Отчет по дням новый" report
+      result = await service.getDailyReport({
         dateFrom: dateFrom as string,
         dateTo: dateTo as string,
       })

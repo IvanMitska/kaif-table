@@ -376,40 +376,109 @@ export class IikoService {
   }
 
   /**
-   * Get store operations report - detailed product sales
+   * Get "Отчет по дням новый" - the accurate daily report
+   * This report shows correct data with discounts applied
+   * presetId: c459326a-23d5-4088-9235-880634607c22
    */
-  async getProductSalesReport(filter: OlapReportFilter): Promise<any> {
+  async getDailyReport(filter: OlapReportFilter): Promise<any> {
     const token = await this.authenticate()
 
-    const endpoints = [
-      '/resto/api/reports/store/productSales',
-      '/resto/api/reports/sales/by-product',
-      '/resto/api/v2/reports/productExpense',
-      '/resto/api/reports/productSales',
-    ]
+    try {
+      // Format dates as DD.MM.YYYY for iiko
+      const formatDate = (dateStr: string) => {
+        const [year, month, day] = dateStr.split('-')
+        return `${day}.${month}.${year}`
+      }
 
-    for (const endpoint of endpoints) {
-      try {
-        const response = await axios.get(
-          `${this.config.serverUrl}${endpoint}`,
-          {
-            params: {
-              key: token,
-              from: filter.dateFrom,
-              to: filter.dateTo,
-              dateFrom: filter.dateFrom,
-              dateTo: filter.dateTo,
-            },
-            timeout: 15000,
-          }
-        )
-        return { endpoint, data: response.data }
-      } catch (error: any) {
-        console.log(`Endpoint ${endpoint} failed:`, error.response?.status)
+      const response = await axios.get(
+        `${this.config.serverUrl}/resto/service/reports/report.jspx`,
+        {
+          params: {
+            key: token,
+            dateFrom: formatDate(filter.dateFrom),
+            dateTo: formatDate(filter.dateTo),
+            presetId: 'c459326a-23d5-4088-9235-880634607c22', // "Отчет по дням новый"
+          },
+          timeout: 30000,
+          responseType: 'text',
+        }
+      )
+
+      // Parse XML response
+      const xmlData = response.data
+      return this.parseDailyReportXml(xmlData)
+    } catch (error: any) {
+      console.error('Daily report error:', error.response?.data || error.message)
+      return { error: error.response?.data || error.message }
+    }
+  }
+
+  /**
+   * Parse XML from daily report
+   */
+  private parseDailyReportXml(xml: string): any {
+    const items: any[] = []
+
+    // Simple XML parsing - find all row data
+    // The XML structure contains sales data in a specific format
+    // We'll extract: date, category, dish, payment type, amount (with discount), quantity
+
+    try {
+      // Look for data rows in XML
+      // Pattern: <r> tags or similar containing the data
+      const rowRegex = /<r[^>]*>([\s\S]*?)<\/r>/gi
+      const cellRegex = /<c[^>]*>([^<]*)<\/c>/gi
+
+      let match
+      while ((match = rowRegex.exec(xml)) !== null) {
+        const rowContent = match[1]
+        const cells: string[] = []
+
+        let cellMatch
+        while ((cellMatch = cellRegex.exec(rowContent)) !== null) {
+          cells.push(cellMatch[1])
+        }
+
+        if (cells.length >= 5) {
+          items.push({
+            date: cells[0],
+            category: cells[1],
+            dishName: cells[2],
+            paymentType: cells[3],
+            amount: parseFloat(cells[4]) || 0,
+            quantity: parseFloat(cells[5]) || 0,
+          })
+        }
+      }
+
+      // If regex didn't work, return raw XML for debugging
+      if (items.length === 0) {
+        // Try to find any numeric data patterns
+        const preview = xml.substring(0, 2000)
+        return {
+          rawXmlPreview: preview,
+          message: 'Could not parse XML structure, returning preview for analysis'
+        }
+      }
+
+      // Calculate totals
+      const totalAmount = items.reduce((sum, item) => sum + item.amount, 0)
+      const totalQuantity = items.reduce((sum, item) => sum + item.quantity, 0)
+
+      return {
+        items,
+        summary: {
+          totalAmount,
+          totalQuantity,
+          itemCount: items.length,
+        }
+      }
+    } catch (error) {
+      return {
+        error: 'Failed to parse XML',
+        rawXmlPreview: xml.substring(0, 2000)
       }
     }
-
-    return { error: 'No working endpoint found' }
   }
 
   /**
