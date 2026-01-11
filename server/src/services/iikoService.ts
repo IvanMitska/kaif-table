@@ -131,6 +131,8 @@ export class IikoService {
           'DishGroup.Id',
           'OpenTime',
           'OrderNum',
+          'OrderDeleted',  // To filter on server side
+          'Storned',       // To filter on server side
         ],
         groupByColFields: [],
         aggregateFields: [
@@ -147,16 +149,8 @@ export class IikoService {
             includeLow: true,
             includeHigh: true,
           },
-          // Exclude deleted orders (use ExcludeValues with DELETED)
-          'OrderDeleted': {
-            filterType: 'ExcludeValues',
-            values: ['DELETED'],
-          },
-          // Exclude storned/voided items
-          'Storned': {
-            filterType: 'ExcludeValues',
-            values: ['STORNED'],
-          },
+          // Note: OrderDeleted and Storned filters removed - will filter on server side
+          // iiko Syrve doesn't support these enum filters in OLAP API
           ...(filter.departmentId && {
             'Department.Id': {
               filterType: 'IncludeValues',
@@ -283,7 +277,24 @@ export class IikoService {
       console.log('iiko OLAP: no rows returned')
     }
 
+    let skippedDeleted = 0
+    let skippedStorned = 0
+
     for (const row of rows) {
+      // Skip deleted orders
+      const orderDeleted = row['OrderDeleted'] || ''
+      if (orderDeleted === 'DELETED' || orderDeleted === true || orderDeleted === 'true') {
+        skippedDeleted++
+        continue
+      }
+
+      // Skip storned/voided items
+      const storned = row['Storned'] || ''
+      if (storned === 'STORNED' || storned === true || storned === 'true') {
+        skippedStorned++
+        continue
+      }
+
       const grossAmount = parseFloat(row['DishSumInt'] || row['Sum'] || 0)
       const discount = parseFloat(row['DishDiscountSumInt'] || row['Discount'] || 0)
       const netAmount = grossAmount - discount  // NET = GROSS - DISCOUNT
@@ -310,6 +321,8 @@ export class IikoService {
       totalQuantity += item.quantity
       totalDiscount += discount
     }
+
+    console.log(`iiko OLAP: skipped ${skippedDeleted} deleted, ${skippedStorned} storned`)
 
     const totalNetAmount = totalGrossAmount - totalDiscount
 
