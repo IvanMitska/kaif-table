@@ -336,6 +336,62 @@ router.get('/revenue', async (req: AuthRequest, res) => {
   }
 })
 
+// Get raw OLAP data directly from iiko (for debugging/comparison)
+router.get('/raw-olap', async (req: AuthRequest, res) => {
+  try {
+    const { dateFrom, dateTo } = req.query
+
+    if (!dateFrom || !dateTo) {
+      return res.status(400).json({ message: 'Date range is required' })
+    }
+
+    const settings = await prisma.iikoSettings.findFirst({
+      where: { isActive: true },
+    })
+
+    if (!settings) {
+      return res.status(400).json({ message: 'iiko settings not configured' })
+    }
+
+    const service = new IikoService({
+      serverUrl: settings.serverUrl,
+      login: settings.login,
+      password: settings.passwordHash,
+    })
+
+    const rawData = await service.getRawOlapReport({
+      dateFrom: dateFrom as string,
+      dateTo: dateTo as string,
+    })
+
+    // Logout from iiko
+    await service.logout()
+
+    // Return first 20 rows for inspection
+    const rows = rawData.response.data || rawData.response.rows || []
+    const sampleRows = rows.slice(0, 20)
+
+    // Analyze OrderDeleted and Storned values
+    const deletedValues = new Set<string>()
+    const stornedValues = new Set<string>()
+    for (const row of rows) {
+      if (row['OrderDeleted']) deletedValues.add(String(row['OrderDeleted']))
+      if (row['Storned']) stornedValues.add(String(row['Storned']))
+    }
+
+    res.json({
+      totalRows: rawData.rowCount,
+      sampleRows,
+      uniqueDeletedValues: Array.from(deletedValues),
+      uniqueStornedValues: Array.from(stornedValues),
+      requestBody: rawData.requestBody,
+    })
+  } catch (error: any) {
+    console.error('Raw OLAP error:', error)
+    res.status(500).json({ message: error.message || 'Failed to get raw OLAP data' })
+  }
+})
+
 // Debug endpoint to see raw data samples
 router.get('/debug', async (req: AuthRequest, res) => {
   try {

@@ -110,6 +110,7 @@ export class IikoService {
 
   /**
    * Get OLAP sales report with detailed item breakdown
+   * Filters: only closed orders, exclude deleted and voided items
    */
   async getSalesReport(filter: OlapReportFilter): Promise<OlapReportResponse> {
     const token = await this.authenticate()
@@ -129,7 +130,10 @@ export class IikoService {
           'DishGroup',
           'DishGroup.Id',
           'OpenTime',
+          'CloseTime',
           'OrderNum',
+          'OrderDeleted',
+          'Storned',
         ],
         groupByColFields: [],
         aggregateFields: [
@@ -138,7 +142,8 @@ export class IikoService {
           'DishSumInt',
         ],
         filters: {
-          'OpenDate.Typed': {
+          // Use CloseDate instead of OpenDate for accurate closed orders reporting
+          'CloseDate.Typed': {
             filterType: 'DateRange',
             periodType: 'CUSTOM',
             from: filter.dateFrom,
@@ -253,17 +258,34 @@ export class IikoService {
 
   /**
    * Parse OLAP response from iiko
+   * Filters out deleted orders and storned (voided) items
    */
   private parseOlapResponse(data: any): OlapReportResponse {
     const items: OlapSalesItem[] = []
     let totalAmount = 0
     let totalQuantity = 0
     let totalDiscount = 0
+    let skippedDeleted = 0
+    let skippedStorned = 0
 
     // Handle different response formats
     const rows = data.data || data.rows || []
 
     for (const row of rows) {
+      // Skip deleted orders
+      const orderDeleted = row['OrderDeleted'] || row['Order.Deleted'] || ''
+      if (orderDeleted && orderDeleted !== 'NOT_DELETED' && orderDeleted !== '' && orderDeleted !== 'Не удалён') {
+        skippedDeleted++
+        continue
+      }
+
+      // Skip storned (voided) items
+      const storned = row['Storned'] || row['Storno'] || ''
+      if (storned && storned !== 'NOT_STORNED' && storned !== '' && storned !== 'Не сторнирован' && storned !== 'false') {
+        skippedStorned++
+        continue
+      }
+
       const item: OlapSalesItem = {
         dishId: row['DishId'] || row['Dish.Id'] || '',
         dishName: row['DishName'] || row['Dish.Name'] || '',
@@ -276,7 +298,7 @@ export class IikoService {
         amount: parseFloat(row['DishSumInt'] || row['Sum'] || 0),
         discountSum: parseFloat(row['DishDiscountSumInt'] || row['Discount'] || 0),
         orderNum: row['OrderNum'] || row['Order.Number'] || '',
-        openTime: row['OpenTime'] || row['OpenDate'] || '',
+        openTime: row['OpenTime'] || row['CloseTime'] || row['OpenDate'] || '',
         departmentId: row['Department.Id'] || '',
         departmentName: row['Department'] || row['Department.Name'] || '',
       }
@@ -287,12 +309,7 @@ export class IikoService {
       totalDiscount += item.discountSum
     }
 
-    // Check for summary in response
-    if (data.summary) {
-      totalAmount = parseFloat(data.summary.DishSumInt || totalAmount)
-      totalQuantity = parseFloat(data.summary.DishAmountInt || totalQuantity)
-      totalDiscount = parseFloat(data.summary.DishDiscountSumInt || totalDiscount)
-    }
+    console.log(`iiko OLAP: ${rows.length} total rows, ${skippedDeleted} deleted, ${skippedStorned} storned, ${items.length} valid`)
 
     return {
       data: items,
@@ -339,6 +356,73 @@ export class IikoService {
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unknown error'
       return { success: false, message }
+    }
+  }
+
+  /**
+   * Get raw OLAP report for debugging - returns exact iiko response
+   */
+  async getRawOlapReport(filter: OlapReportFilter): Promise<any> {
+    const token = await this.authenticate()
+
+    try {
+      const requestBody = {
+        reportType: 'SALES',
+        buildSummary: 'true',
+        groupByRowFields: [
+          'Department.Id',
+          'Department',
+          'DishId',
+          'DishName',
+          'DishCode',
+          'DishCategory',
+          'DishCategory.Id',
+          'DishGroup',
+          'DishGroup.Id',
+          'OpenTime',
+          'CloseTime',
+          'OrderNum',
+          'OrderDeleted',
+          'Storned',
+        ],
+        groupByColFields: [],
+        aggregateFields: [
+          'DishAmountInt',
+          'DishDiscountSumInt',
+          'DishSumInt',
+        ],
+        filters: {
+          'CloseDate.Typed': {
+            filterType: 'DateRange',
+            periodType: 'CUSTOM',
+            from: filter.dateFrom,
+            to: filter.dateTo,
+            includeLow: true,
+            includeHigh: true,
+          },
+        },
+      }
+
+      const response = await axios.post(
+        `${this.config.serverUrl}/resto/api/v2/reports/olap`,
+        requestBody,
+        {
+          params: { key: token },
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          timeout: 30000,
+        }
+      )
+
+      return {
+        requestBody,
+        response: response.data,
+        rowCount: (response.data.data || response.data.rows || []).length,
+      }
+    } catch (error: any) {
+      const message = error.response?.data || error.message || 'Unknown error'
+      throw new Error(`Failed to fetch raw OLAP report: ${JSON.stringify(message)}`)
     }
   }
 }
