@@ -336,6 +336,99 @@ router.get('/revenue', async (req: AuthRequest, res) => {
   }
 })
 
+// Debug endpoint to see raw data samples
+router.get('/debug', async (req: AuthRequest, res) => {
+  try {
+    const { dateFrom, dateTo } = req.query
+
+    if (!dateFrom || !dateTo) {
+      return res.status(400).json({ message: 'Date range is required' })
+    }
+
+    // Get sample of raw sales data
+    const sampleSales = await prisma.iikoSale.findMany({
+      where: {
+        openTime: {
+          gte: new Date(dateFrom as string),
+          lte: new Date((dateTo as string) + 'T23:59:59'),
+        },
+      },
+      take: 50,
+      orderBy: { amount: 'desc' },
+    })
+
+    // Get all sales for stats
+    const allSales = await prisma.iikoSale.findMany({
+      where: {
+        openTime: {
+          gte: new Date(dateFrom as string),
+          lte: new Date((dateTo as string) + 'T23:59:59'),
+        },
+      },
+    })
+
+    // Check for potential duplicates (same orderNum + dishName)
+    const duplicateCheck = new Map<string, number>()
+    for (const sale of allSales) {
+      const key = `${sale.orderNum}-${sale.dishName}`
+      duplicateCheck.set(key, (duplicateCheck.get(key) || 0) + 1)
+    }
+    const duplicates = Array.from(duplicateCheck.entries())
+      .filter(([_, count]) => count > 1)
+      .slice(0, 20)
+
+    // Get unique categories
+    const categories = [...new Set(allSales.map(s => s.dishCategory))].sort()
+
+    // Stats by category
+    const categoryStats = new Map<string, { count: number; totalAmount: number; avgAmount: number }>()
+    for (const sale of allSales) {
+      const existing = categoryStats.get(sale.dishCategory) || { count: 0, totalAmount: 0, avgAmount: 0 }
+      categoryStats.set(sale.dishCategory, {
+        count: existing.count + 1,
+        totalAmount: existing.totalAmount + sale.amount,
+        avgAmount: 0,
+      })
+    }
+    for (const [cat, stats] of categoryStats) {
+      stats.avgAmount = stats.totalAmount / stats.count
+    }
+
+    // Check amount ranges
+    const amounts = allSales.map(s => s.amount)
+    const minAmount = Math.min(...amounts)
+    const maxAmount = Math.max(...amounts)
+    const avgAmount = amounts.reduce((a, b) => a + b, 0) / amounts.length
+
+    res.json({
+      totalRecords: allSales.length,
+      sampleSales: sampleSales.map(s => ({
+        dishName: s.dishName,
+        dishCategory: s.dishCategory,
+        quantity: s.quantity,
+        amount: s.amount,
+        discountSum: s.discountSum,
+        orderNum: s.orderNum,
+        openTime: s.openTime,
+      })),
+      categories,
+      categoryStats: Array.from(categoryStats.entries()).map(([cat, stats]) => ({
+        category: cat,
+        ...stats,
+      })).sort((a, b) => b.totalAmount - a.totalAmount),
+      amountStats: {
+        min: minAmount,
+        max: maxAmount,
+        avg: avgAmount,
+      },
+      potentialDuplicates: duplicates,
+    })
+  } catch (error) {
+    console.error('Debug error:', error)
+    res.status(500).json({ message: 'Debug failed' })
+  }
+})
+
 // Get top selling items
 router.get('/top-items', async (req: AuthRequest, res) => {
   try {
