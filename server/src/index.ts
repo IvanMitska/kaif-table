@@ -1,5 +1,6 @@
 import cors from 'cors'
 import express from 'express'
+import fs from 'fs'
 import path from 'path'
 import { fileURLToPath } from 'url'
 import { PrismaClient } from '@prisma/client'
@@ -19,6 +20,12 @@ export const prisma = new PrismaClient()
 
 const app = express()
 const PORT = process.env.PORT || 3001
+
+// Debug logging
+console.log('=== Server Starting ===')
+console.log('NODE_ENV:', process.env.NODE_ENV)
+console.log('PORT:', PORT)
+console.log('CWD:', process.cwd())
 
 // CORS configuration
 app.use(cors({
@@ -45,9 +52,19 @@ app.get('/api/health', (_, res) => {
 })
 
 // Serve static files in production
+console.log('Checking production mode...')
 if (process.env.NODE_ENV === 'production') {
   const clientBuildPath = path.join(process.cwd(), 'client/dist')
+  console.log('Production mode enabled!')
   console.log('Serving static files from:', clientBuildPath)
+
+  // Check if directory exists
+  try {
+    const files = fs.readdirSync(clientBuildPath)
+    console.log('client/dist exists! Files:', files)
+  } catch (e) {
+    console.log('ERROR: client/dist does NOT exist or cannot be read!', e)
+  }
 
   app.use(express.static(clientBuildPath))
 
