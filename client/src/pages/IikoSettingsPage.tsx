@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useLanguage } from '@/context/LanguageContext'
-import { iikoApi, IikoRevenue, IikoSettings, IikoTopItem } from '@/lib/api'
+import { iikoApi, type IikoRevenue, type IikoSettings, type IikoTopItem } from '@/lib/api'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { format, subDays } from 'date-fns'
 import {
@@ -19,13 +19,12 @@ import {
   ShoppingCart,
   TrendingUp,
 } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import {
   Bar,
   BarChart,
   CartesianGrid,
   Cell,
-  Legend,
   Pie,
   PieChart,
   ResponsiveContainer,
@@ -59,13 +58,15 @@ export function IikoSettingsPage() {
   const { data: settings, isLoading: settingsLoading } = useQuery<IikoSettings | null>({
     queryKey: ['iiko-settings'],
     queryFn: iikoApi.getSettings,
-    onSuccess: (data) => {
-      if (data) {
-        setServerUrl(data.serverUrl)
-        setLogin(data.login)
-      }
-    },
   })
+
+  // Update form when settings load
+  useEffect(() => {
+    if (settings) {
+      setServerUrl(settings.serverUrl)
+      setLogin(settings.login)
+    }
+  }, [settings])
 
   // Get revenue data
   const { data: revenueData, isLoading: revenueLoading } = useQuery<IikoRevenue>({
@@ -398,8 +399,8 @@ export function IikoSettingsPage() {
                         cx="50%"
                         cy="50%"
                         outerRadius={100}
-                        label={({ category, percent }) =>
-                          `${category} (${(percent * 100).toFixed(0)}%)`
+                        label={({ name, percent }) =>
+                          `${name} (${((percent || 0) * 100).toFixed(0)}%)`
                         }
                       >
                         {revenueData.byCategory.map((_, index) => (
