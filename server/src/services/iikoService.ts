@@ -414,67 +414,90 @@ export class IikoService {
   }
 
   /**
-   * Parse XML from daily report
+   * Parse XML from daily report "Отчет по дням новый"
+   * XML structure:
+   * <data>
+   *   <OpenDate.Typed>09.01.2026</OpenDate.Typed>
+   *   <DishCategory>BAR</DishCategory>
+   *   <DishName>Americano</DishName>
+   *   <PayTypes>Cash</PayTypes>
+   *   <DishDiscountSumInt>638.00</DishDiscountSumInt>  - NET amount (after discount!)
+   *   <DishAmountInt>6.000</DishAmountInt>             - quantity
+   * </data>
    */
   private parseDailyReportXml(xml: string): any {
     const items: any[] = []
 
-    // Simple XML parsing - find all row data
-    // The XML structure contains sales data in a specific format
-    // We'll extract: date, category, dish, payment type, amount (with discount), quantity
-
     try {
-      // Look for data rows in XML
-      // Pattern: <r> tags or similar containing the data
-      const rowRegex = /<r[^>]*>([\s\S]*?)<\/r>/gi
-      const cellRegex = /<c[^>]*>([^<]*)<\/c>/gi
-
+      // Extract all <data>...</data> blocks
+      const dataRegex = /<data>([\s\S]*?)<\/data>/gi
       let match
-      while ((match = rowRegex.exec(xml)) !== null) {
-        const rowContent = match[1]
-        const cells: string[] = []
 
-        let cellMatch
-        while ((cellMatch = cellRegex.exec(rowContent)) !== null) {
-          cells.push(cellMatch[1])
+      while ((match = dataRegex.exec(xml)) !== null) {
+        const dataBlock = match[1]
+
+        // Extract individual fields
+        const getField = (fieldName: string): string => {
+          const regex = new RegExp(`<${fieldName}>([^<]*)</${fieldName}>`, 'i')
+          const fieldMatch = dataBlock.match(regex)
+          return fieldMatch ? fieldMatch[1] : ''
         }
 
-        if (cells.length >= 5) {
+        const date = getField('OpenDate.Typed')
+        const category = getField('DishCategory')
+        const dishName = getField('DishName')
+        const paymentType = getField('PayTypes')
+        const amount = parseFloat(getField('DishDiscountSumInt')) || 0  // NET amount after discount
+        const quantity = parseFloat(getField('DishAmountInt')) || 0
+
+        if (dishName) {
           items.push({
-            date: cells[0],
-            category: cells[1],
-            dishName: cells[2],
-            paymentType: cells[3],
-            amount: parseFloat(cells[4]) || 0,
-            quantity: parseFloat(cells[5]) || 0,
+            date,
+            category,
+            dishName,
+            paymentType,
+            amount,      // This is NET revenue (after discount)
+            quantity,
           })
         }
       }
 
-      // If regex didn't work, return raw XML for debugging
-      if (items.length === 0) {
-        // Try to find any numeric data patterns
-        const preview = xml.substring(0, 2000)
-        return {
-          rawXmlPreview: preview,
-          message: 'Could not parse XML structure, returning preview for analysis'
-        }
+      // Group by dish for summary
+      const dishSummary = new Map<string, { category: string; quantity: number; amount: number }>()
+      for (const item of items) {
+        const key = item.dishName
+        const existing = dishSummary.get(key) || { category: item.category, quantity: 0, amount: 0 }
+        dishSummary.set(key, {
+          category: item.category,
+          quantity: existing.quantity + item.quantity,
+          amount: existing.amount + item.amount,
+        })
       }
 
       // Calculate totals
       const totalAmount = items.reduce((sum, item) => sum + item.amount, 0)
       const totalQuantity = items.reduce((sum, item) => sum + item.quantity, 0)
 
+      // Top items by revenue
+      const topItems = Array.from(dishSummary.entries())
+        .map(([dishName, data]) => ({ dishName, ...data }))
+        .sort((a, b) => b.amount - a.amount)
+        .slice(0, 20)
+
       return {
-        items,
+        success: true,
+        itemCount: items.length,
         summary: {
           totalAmount,
           totalQuantity,
-          itemCount: items.length,
-        }
+        },
+        topItems,
+        // Include raw items for detailed analysis
+        items: items.slice(0, 50), // First 50 for debugging
       }
     } catch (error) {
       return {
+        success: false,
         error: 'Failed to parse XML',
         rawXmlPreview: xml.substring(0, 2000)
       }
