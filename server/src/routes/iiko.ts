@@ -336,6 +336,51 @@ router.get('/revenue', async (req: AuthRequest, res) => {
   }
 })
 
+// Try alternative iiko APIs for comparison
+router.get('/alt-api', async (req: AuthRequest, res) => {
+  try {
+    const { dateFrom, dateTo, type = 'sales' } = req.query
+
+    if (!dateFrom || !dateTo) {
+      return res.status(400).json({ message: 'Date range is required' })
+    }
+
+    const settings = await prisma.iikoSettings.findFirst({
+      where: { isActive: true },
+    })
+
+    if (!settings) {
+      return res.status(400).json({ message: 'iiko settings not configured' })
+    }
+
+    const service = new IikoService({
+      serverUrl: settings.serverUrl,
+      login: settings.login,
+      password: settings.passwordHash,
+    })
+
+    let result
+    if (type === 'orders') {
+      result = await service.getOrders({
+        dateFrom: dateFrom as string,
+        dateTo: dateTo as string,
+      })
+    } else {
+      result = await service.getSalesByDepartment({
+        dateFrom: dateFrom as string,
+        dateTo: dateTo as string,
+      })
+    }
+
+    await service.logout()
+
+    res.json({ type, dateFrom, dateTo, result })
+  } catch (error: any) {
+    console.error('Alt API error:', error)
+    res.status(500).json({ message: error.message || 'Failed to get data' })
+  }
+})
+
 // Get raw OLAP data directly from iiko (for debugging/comparison)
 router.get('/raw-olap', async (req: AuthRequest, res) => {
   try {

@@ -347,6 +347,61 @@ export class IikoService {
   }
 
   /**
+   * Get sales by departments - alternative to OLAP
+   * This might give different (more accurate) results
+   */
+  async getSalesByDepartment(filter: OlapReportFilter): Promise<any> {
+    const token = await this.authenticate()
+
+    try {
+      // Try the sales report endpoint
+      const response = await axios.get(
+        `${this.config.serverUrl}/resto/api/reports/sales`,
+        {
+          params: {
+            key: token,
+            dateFrom: filter.dateFrom,
+            dateTo: filter.dateTo,
+          },
+          timeout: 30000,
+        }
+      )
+
+      return response.data
+    } catch (error: any) {
+      console.error('Sales by department error:', error.response?.data || error.message)
+      // Return error info for debugging
+      return { error: error.response?.data || error.message }
+    }
+  }
+
+  /**
+   * Get orders list - to see individual orders
+   */
+  async getOrders(filter: OlapReportFilter): Promise<any> {
+    const token = await this.authenticate()
+
+    try {
+      const response = await axios.get(
+        `${this.config.serverUrl}/resto/api/orders`,
+        {
+          params: {
+            key: token,
+            dateFrom: filter.dateFrom + 'T00:00:00',
+            dateTo: filter.dateTo + 'T23:59:59',
+          },
+          timeout: 30000,
+        }
+      )
+
+      return response.data
+    } catch (error: any) {
+      console.error('Get orders error:', error.response?.data || error.message)
+      return { error: error.response?.data || error.message }
+    }
+  }
+
+  /**
    * Get raw OLAP report for debugging - returns exact iiko response
    */
   async getRawOlapReport(filter: OlapReportFilter): Promise<any> {
