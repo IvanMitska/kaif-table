@@ -46,7 +46,9 @@ app.get('/api/health', (_, res) => {
 
 // Serve static files in production
 if (process.env.NODE_ENV === 'production') {
-  const clientBuildPath = path.join(__dirname, '../../client/dist')
+  const clientBuildPath = path.join(process.cwd(), 'client/dist')
+  console.log('Serving static files from:', clientBuildPath)
+
   app.use(express.static(clientBuildPath))
 
   // Handle SPA routing - serve index.html for all non-API routes
