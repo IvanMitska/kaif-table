@@ -130,10 +130,7 @@ export class IikoService {
           'DishGroup',
           'DishGroup.Id',
           'OpenTime',
-          'CloseTime',
           'OrderNum',
-          'OrderDeleted',
-          'Storned',
         ],
         groupByColFields: [],
         aggregateFields: [
@@ -257,34 +254,25 @@ export class IikoService {
 
   /**
    * Parse OLAP response from iiko
-   * Filters out deleted orders and storned (voided) items
    */
   private parseOlapResponse(data: any): OlapReportResponse {
     const items: OlapSalesItem[] = []
     let totalAmount = 0
     let totalQuantity = 0
     let totalDiscount = 0
-    let skippedDeleted = 0
-    let skippedStorned = 0
 
     // Handle different response formats
     const rows = data.data || data.rows || []
 
+    // Log first row to see structure
+    if (rows.length > 0) {
+      console.log('iiko OLAP first row keys:', Object.keys(rows[0]))
+      console.log('iiko OLAP first row sample:', JSON.stringify(rows[0]).substring(0, 500))
+    } else {
+      console.log('iiko OLAP: no rows returned')
+    }
+
     for (const row of rows) {
-      // Skip deleted orders
-      const orderDeleted = row['OrderDeleted'] || row['Order.Deleted'] || ''
-      if (orderDeleted && orderDeleted !== 'NOT_DELETED' && orderDeleted !== '' && orderDeleted !== 'Не удалён') {
-        skippedDeleted++
-        continue
-      }
-
-      // Skip storned (voided) items
-      const storned = row['Storned'] || row['Storno'] || ''
-      if (storned && storned !== 'NOT_STORNED' && storned !== '' && storned !== 'Не сторнирован' && storned !== 'false') {
-        skippedStorned++
-        continue
-      }
-
       const item: OlapSalesItem = {
         dishId: row['DishId'] || row['Dish.Id'] || '',
         dishName: row['DishName'] || row['Dish.Name'] || '',
@@ -308,7 +296,7 @@ export class IikoService {
       totalDiscount += item.discountSum
     }
 
-    console.log(`iiko OLAP: ${rows.length} total rows, ${skippedDeleted} deleted, ${skippedStorned} storned, ${items.length} valid`)
+    console.log(`iiko OLAP: ${rows.length} total rows, ${items.length} parsed`)
 
     return {
       data: items,
@@ -379,10 +367,7 @@ export class IikoService {
           'DishGroup',
           'DishGroup.Id',
           'OpenTime',
-          'CloseTime',
           'OrderNum',
-          'OrderDeleted',
-          'Storned',
         ],
         groupByColFields: [],
         aggregateFields: [
