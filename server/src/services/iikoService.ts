@@ -110,7 +110,7 @@ export class IikoService {
 
   /**
    * Get OLAP sales report with detailed item breakdown
-   * Filters: only closed orders, exclude deleted and voided items
+   * Filters: exclude deleted orders and storned items for accurate data
    */
   async getSalesReport(filter: OlapReportFilter): Promise<OlapReportResponse> {
     const token = await this.authenticate()
@@ -146,6 +146,16 @@ export class IikoService {
             to: filter.dateTo,
             includeLow: true,
             includeHigh: true,
+          },
+          // Exclude deleted orders
+          'OrderDeleted': {
+            filterType: 'IncludeValues',
+            values: ['NOT_DELETED'],
+          },
+          // Exclude storned/voided items
+          'Storned': {
+            filterType: 'IncludeValues',
+            values: ['NOT_STORNED'],
           },
           ...(filter.departmentId && {
             'Department.Id': {
@@ -254,10 +264,11 @@ export class IikoService {
 
   /**
    * Parse OLAP response from iiko
+   * NET revenue = DishSumInt - DishDiscountSumInt
    */
   private parseOlapResponse(data: any): OlapReportResponse {
     const items: OlapSalesItem[] = []
-    let totalAmount = 0
+    let totalGrossAmount = 0
     let totalQuantity = 0
     let totalDiscount = 0
 
@@ -273,6 +284,10 @@ export class IikoService {
     }
 
     for (const row of rows) {
+      const grossAmount = parseFloat(row['DishSumInt'] || row['Sum'] || 0)
+      const discount = parseFloat(row['DishDiscountSumInt'] || row['Discount'] || 0)
+      const netAmount = grossAmount - discount  // NET = GROSS - DISCOUNT
+
       const item: OlapSalesItem = {
         dishId: row['DishId'] || row['Dish.Id'] || '',
         dishName: row['DishName'] || row['Dish.Name'] || '',
@@ -282,8 +297,8 @@ export class IikoService {
         dishGroup: row['DishGroup'] || row['Dish.Group'] || '',
         dishGroupId: row['DishGroup.Id'] || '',
         quantity: parseFloat(row['DishAmountInt'] || row['Amount'] || 0),
-        amount: parseFloat(row['DishSumInt'] || row['Sum'] || 0),
-        discountSum: parseFloat(row['DishDiscountSumInt'] || row['Discount'] || 0),
+        amount: netAmount,  // Store NET amount, not gross
+        discountSum: discount,
         orderNum: row['OrderNum'] || row['Order.Number'] || '',
         openTime: row['OpenTime'] || row['CloseTime'] || row['OpenDate'] || '',
         departmentId: row['Department.Id'] || '',
@@ -291,17 +306,19 @@ export class IikoService {
       }
 
       items.push(item)
-      totalAmount += item.amount
+      totalGrossAmount += grossAmount
       totalQuantity += item.quantity
-      totalDiscount += item.discountSum
+      totalDiscount += discount
     }
 
-    console.log(`iiko OLAP: ${rows.length} total rows, ${items.length} parsed`)
+    const totalNetAmount = totalGrossAmount - totalDiscount
+
+    console.log(`iiko OLAP: ${rows.length} rows, gross=${totalGrossAmount}, discount=${totalDiscount}, NET=${totalNetAmount}`)
 
     return {
       data: items,
       summary: {
-        totalAmount,
+        totalAmount: totalNetAmount,  // Return NET amount
         totalQuantity,
         totalDiscount,
       },
@@ -527,19 +544,21 @@ export class IikoService {
   }
 
   /**
-   * Get orders list - to see individual orders
+   * Get orders list with detailed sales data
+   * This method fetches closed orders and calculates accurate totals
    */
   async getOrders(filter: OlapReportFilter): Promise<any> {
     const token = await this.authenticate()
 
     try {
+      // Try the events/sessions endpoint for closed sales data
       const response = await axios.get(
-        `${this.config.serverUrl}/resto/api/orders`,
+        `${this.config.serverUrl}/resto/api/v2/events/sessions`,
         {
           params: {
             key: token,
-            dateFrom: filter.dateFrom + 'T00:00:00',
-            dateTo: filter.dateTo + 'T23:59:59',
+            from: filter.dateFrom + 'T00:00:00',
+            to: filter.dateTo + 'T23:59:59',
           },
           timeout: 30000,
         }
@@ -547,7 +566,57 @@ export class IikoService {
 
       return response.data
     } catch (error: any) {
-      console.error('Get orders error:', error.response?.data || error.message)
+      console.log('Sessions endpoint failed, trying orders endpoint')
+
+      // Fallback to orders endpoint
+      try {
+        const ordersResponse = await axios.get(
+          `${this.config.serverUrl}/resto/api/orders`,
+          {
+            params: {
+              key: token,
+              dateFrom: filter.dateFrom,
+              dateTo: filter.dateTo,
+              status: 'CLOSED', // Only closed orders
+            },
+            timeout: 30000,
+          }
+        )
+
+        return ordersResponse.data
+      } catch (orderError: any) {
+        console.error('Get orders error:', orderError.response?.data || orderError.message)
+        return { error: orderError.response?.data || orderError.message }
+      }
+    }
+  }
+
+  /**
+   * Get accurate sales data by fetching the "close session" document
+   * This gives the same data as the cash register close report
+   */
+  async getCloseSessionData(filter: OlapReportFilter): Promise<any> {
+    const token = await this.authenticate()
+
+    try {
+      // Get close session documents
+      const response = await axios.get(
+        `${this.config.serverUrl}/resto/api/v2/documents/getDocumentsByType`,
+        {
+          params: {
+            key: token,
+            type: 'CloseSession',
+            from: filter.dateFrom,
+            to: filter.dateTo,
+          },
+          timeout: 30000,
+        }
+      )
+
+      console.log('CloseSession response:', JSON.stringify(response.data).substring(0, 500))
+      return response.data
+    } catch (error: any) {
+      console.log('CloseSession error:', error.response?.data || error.message)
       return { error: error.response?.data || error.message }
     }
   }

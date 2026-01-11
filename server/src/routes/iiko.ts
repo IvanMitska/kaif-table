@@ -371,6 +371,12 @@ router.get('/alt-api', async (req: AuthRequest, res) => {
         dateFrom: dateFrom as string,
         dateTo: dateTo as string,
       })
+    } else if (type === 'session') {
+      // Get close session data
+      result = await service.getCloseSessionData({
+        dateFrom: dateFrom as string,
+        dateTo: dateTo as string,
+      })
     } else {
       result = await service.getSalesByDepartment({
         dateFrom: dateFrom as string,
