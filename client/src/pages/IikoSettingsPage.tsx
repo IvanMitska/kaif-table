@@ -391,26 +391,43 @@ export function IikoSettingsPage() {
                     <Loader2 className="h-8 w-8 animate-spin text-primary" />
                   </div>
                 ) : revenueData?.byCategory && revenueData.byCategory.length > 0 ? (
-                  <ResponsiveContainer width="100%" height={300}>
-                    <PieChart>
-                      <Pie
-                        data={revenueData.byCategory}
-                        dataKey="amount"
-                        nameKey="category"
-                        cx="50%"
-                        cy="50%"
-                        outerRadius={100}
-                        label={({ name, percent }) =>
-                          `${name} (${((percent || 0) * 100).toFixed(0)}%)`
-                        }
-                      >
-                        {revenueData.byCategory.map((_, index) => (
-                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                        ))}
-                      </Pie>
-                      <Tooltip formatter={(value) => formatCurrency(Number(value) || 0)} />
-                    </PieChart>
-                  </ResponsiveContainer>
+                  <div className="flex flex-col">
+                    <ResponsiveContainer width="100%" height={250}>
+                      <PieChart>
+                        <Pie
+                          data={revenueData.byCategory}
+                          dataKey="amount"
+                          nameKey="category"
+                          cx="50%"
+                          cy="50%"
+                          outerRadius={80}
+                          label={({ percent }) =>
+                            (percent || 0) >= 0.05 ? `${((percent || 0) * 100).toFixed(0)}%` : ''
+                          }
+                          labelLine={({ percent }) => (percent || 0) >= 0.05}
+                        >
+                          {revenueData.byCategory.map((_, index) => (
+                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                          ))}
+                        </Pie>
+                        <Tooltip
+                          formatter={(value) => formatCurrency(Number(value) || 0)}
+                          labelFormatter={(label) => label}
+                        />
+                      </PieChart>
+                    </ResponsiveContainer>
+                    <div className="flex flex-wrap gap-2 justify-center mt-2">
+                      {revenueData.byCategory.map((item, index) => (
+                        <div key={item.category} className="flex items-center gap-1 text-xs">
+                          <div
+                            className="w-3 h-3 rounded-sm"
+                            style={{ backgroundColor: COLORS[index % COLORS.length] }}
+                          />
+                          <span className="text-slate-600">{item.category}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 ) : (
                   <div className="flex items-center justify-center h-64 text-slate-500">
                     {t.dashboard.noData}
