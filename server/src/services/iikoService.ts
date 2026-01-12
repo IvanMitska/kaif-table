@@ -278,9 +278,11 @@ export class IikoService {
     }
 
     for (const row of rows) {
-      const grossAmount = parseFloat(row['DishSumInt'] || row['Sum'] || 0)
-      const discount = parseFloat(row['DishDiscountSumInt'] || row['Discount'] || 0)
-      const netAmount = grossAmount - discount  // NET = GROSS - DISCOUNT
+      // In iiko Syrve OLAP API:
+      // DishDiscountSumInt = NET amount (final price after discounts)
+      // DishSumInt = discount amount or base price (NOT the total)
+      const netAmount = parseFloat(row['DishDiscountSumInt'] || row['Sum'] || 0)
+      const discountAmount = parseFloat(row['DishSumInt'] || 0)  // This is actually discount, not gross
 
       const item: OlapSalesItem = {
         dishId: row['DishId'] || row['Dish.Id'] || '',
@@ -291,8 +293,8 @@ export class IikoService {
         dishGroup: row['DishGroup'] || row['Dish.Group'] || '',
         dishGroupId: row['DishGroup.Id'] || '',
         quantity: parseFloat(row['DishAmountInt'] || row['Amount'] || 0),
-        amount: netAmount,  // Store NET amount, not gross
-        discountSum: discount,
+        amount: netAmount,  // DishDiscountSumInt is the NET amount
+        discountSum: discountAmount,
         orderNum: row['OrderNum'] || row['Order.Number'] || '',
         openTime: row['OpenTime'] || row['CloseTime'] || row['OpenDate'] || '',
         departmentId: row['Department.Id'] || '',
@@ -300,19 +302,17 @@ export class IikoService {
       }
 
       items.push(item)
-      totalGrossAmount += grossAmount
+      totalGrossAmount += netAmount  // Now tracking NET amount
       totalQuantity += item.quantity
-      totalDiscount += discount
+      totalDiscount += discountAmount
     }
 
-    const totalNetAmount = totalGrossAmount - totalDiscount
-
-    console.log(`iiko OLAP: ${rows.length} rows, gross=${totalGrossAmount}, discount=${totalDiscount}, NET=${totalNetAmount}`)
+    console.log(`iiko OLAP: ${rows.length} rows, totalNET=${totalGrossAmount}, totalDiscount=${totalDiscount}`)
 
     return {
       data: items,
       summary: {
-        totalAmount: totalNetAmount,  // Return NET amount
+        totalAmount: totalGrossAmount,  // This is now the NET amount (from DishDiscountSumInt)
         totalQuantity,
         totalDiscount,
       },
