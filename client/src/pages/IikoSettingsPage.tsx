@@ -404,7 +404,7 @@ export function IikoSettingsPage() {
                           label={({ percent }) =>
                             (percent || 0) >= 0.05 ? `${((percent || 0) * 100).toFixed(0)}%` : ''
                           }
-                          labelLine={({ percent }) => (percent || 0) >= 0.05}
+                          labelLine={false}
                         >
                           {revenueData.byCategory.map((_, index) => (
                             <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
