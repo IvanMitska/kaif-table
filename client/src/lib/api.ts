@@ -171,7 +171,13 @@ export interface IikoRevenue {
   totalQuantity: number
   orderCount: number
   averageCheck: number
-  byCategory: Array<{ category: string; amount: number; quantity: number }>
+  byCategory: Array<{
+    category: string
+    amount: number
+    quantity: number
+    orderCount: number
+    averageCheck: number
+  }>
   byDay: Array<{ date: string; amount: number }>
   byHour: Array<{ hour: number; amount: number }>
 }

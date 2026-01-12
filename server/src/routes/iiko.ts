@@ -291,14 +291,14 @@ router.get('/revenue', async (req: AuthRequest, res) => {
     const orderCount = new Set(sales.map((s) => s.orderNum)).size
     const averageCheck = orderCount > 0 ? totalRevenue / orderCount : 0
 
-    // Group by category
-    const categoryMap = new Map<string, { amount: number; quantity: number }>()
+    // Group by category with order count for average check
+    const categoryMap = new Map<string, { amount: number; quantity: number; orders: Set<string> }>()
     for (const sale of sales) {
-      const existing = categoryMap.get(sale.dishCategory) || { amount: 0, quantity: 0 }
-      categoryMap.set(sale.dishCategory, {
-        amount: existing.amount + sale.amount,
-        quantity: existing.quantity + sale.quantity,
-      })
+      const existing = categoryMap.get(sale.dishCategory) || { amount: 0, quantity: 0, orders: new Set<string>() }
+      existing.amount += sale.amount
+      existing.quantity += sale.quantity
+      existing.orders.add(sale.orderNum)
+      categoryMap.set(sale.dishCategory, existing)
     }
 
     // Group by day
@@ -321,7 +321,13 @@ router.get('/revenue', async (req: AuthRequest, res) => {
       orderCount,
       averageCheck,
       byCategory: Array.from(categoryMap.entries())
-        .map(([category, data]) => ({ category, ...data }))
+        .map(([category, data]) => ({
+          category,
+          amount: data.amount,
+          quantity: data.quantity,
+          orderCount: data.orders.size,
+          averageCheck: data.orders.size > 0 ? data.amount / data.orders.size : 0,
+        }))
         .sort((a, b) => b.amount - a.amount),
       byDay: Array.from(dailyMap.entries())
         .map(([date, amount]) => ({ date, amount }))

@@ -474,6 +474,52 @@ export function IikoSettingsPage() {
             </Card>
           </div>
 
+          {/* Average Check by Category */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <TrendingUp className="h-5 w-5" />
+                Средний чек по направлениям
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {revenueLoading ? (
+                <div className="flex items-center justify-center h-32">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                </div>
+              ) : revenueData?.byCategory && revenueData.byCategory.length > 0 ? (
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="border-b">
+                        <th className="text-left py-3 px-4 font-medium text-slate-500">Направление</th>
+                        <th className="text-right py-3 px-4 font-medium text-slate-500">Выручка</th>
+                        <th className="text-right py-3 px-4 font-medium text-slate-500">Заказов</th>
+                        <th className="text-right py-3 px-4 font-medium text-slate-500">Средний чек</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {revenueData.byCategory.map((item) => (
+                        <tr key={item.category} className="border-b last:border-0 hover:bg-slate-50">
+                          <td className="py-3 px-4 font-medium">{item.category}</td>
+                          <td className="py-3 px-4 text-right">{formatCurrency(item.amount)}</td>
+                          <td className="py-3 px-4 text-right">{item.orderCount}</td>
+                          <td className="py-3 px-4 text-right font-medium text-primary">
+                            {formatCurrency(item.averageCheck)}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="flex items-center justify-center h-32 text-slate-500">
+                  {t.dashboard.noData}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
           {/* Top Items */}
           <Card>
             <CardHeader>
