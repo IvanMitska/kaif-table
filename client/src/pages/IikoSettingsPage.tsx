@@ -250,6 +250,63 @@ export function IikoSettingsPage() {
             <CardDescription>{t.iiko.subtitle}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
+            {/* Quick period buttons */}
+            <div className="flex flex-wrap gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  const today = format(new Date(), 'yyyy-MM-dd')
+                  setSyncDateFrom(today)
+                  setSyncDateTo(today)
+                }}
+              >
+                Сегодня
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  const yesterday = format(subDays(new Date(), 1), 'yyyy-MM-dd')
+                  setSyncDateFrom(yesterday)
+                  setSyncDateTo(yesterday)
+                }}
+              >
+                Вчера
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setSyncDateFrom(format(subDays(new Date(), 7), 'yyyy-MM-dd'))
+                  setSyncDateTo(format(new Date(), 'yyyy-MM-dd'))
+                }}
+              >
+                7 дней
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setSyncDateFrom(format(subDays(new Date(), 30), 'yyyy-MM-dd'))
+                  setSyncDateTo(format(new Date(), 'yyyy-MM-dd'))
+                }}
+              >
+                30 дней
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  const now = new Date()
+                  setSyncDateFrom(format(new Date(now.getFullYear(), now.getMonth(), 1), 'yyyy-MM-dd'))
+                  setSyncDateTo(format(new Date(), 'yyyy-MM-dd'))
+                }}
+              >
+                Этот месяц
+              </Button>
+            </div>
+
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>{t.iiko.dateFrom}</Label>
@@ -474,6 +531,85 @@ export function IikoSettingsPage() {
             </Card>
           </div>
 
+          {/* Revenue by Hour and Category Bar Chart */}
+          <div className="grid gap-6 lg:grid-cols-2">
+            {/* Revenue by Hour */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Clock className="h-5 w-5" />
+                  Выручка по часам
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {revenueLoading ? (
+                  <div className="flex items-center justify-center h-64">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                  </div>
+                ) : revenueData?.byHour && revenueData.byHour.length > 0 ? (
+                  <ResponsiveContainer width="100%" height={300}>
+                    <BarChart data={revenueData.byHour}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis
+                        dataKey="hour"
+                        tickFormatter={(value) => `${value}:00`}
+                      />
+                      <YAxis tickFormatter={(value) => `${(value / 1000).toFixed(0)}k`} />
+                      <Tooltip
+                        formatter={(value) => formatCurrency(Number(value) || 0)}
+                        labelFormatter={(label) => `${label}:00 - ${Number(label) + 1}:00`}
+                      />
+                      <Bar dataKey="amount" fill="#8b5cf6" radius={[4, 4, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="flex items-center justify-center h-64 text-slate-500">
+                    {t.dashboard.noData}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Revenue by Category Bar Chart */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <BarChart3 className="h-5 w-5" />
+                  Выручка по категориям
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {revenueLoading ? (
+                  <div className="flex items-center justify-center h-64">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                  </div>
+                ) : revenueData?.byCategory && revenueData.byCategory.length > 0 ? (
+                  <ResponsiveContainer width="100%" height={300}>
+                    <BarChart
+                      data={revenueData.byCategory.filter(c => c.amount > 0).slice(0, 10)}
+                      layout="vertical"
+                    >
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis type="number" tickFormatter={(value) => `${(value / 1000).toFixed(0)}k`} />
+                      <YAxis
+                        type="category"
+                        dataKey="category"
+                        width={120}
+                        tick={{ fontSize: 12 }}
+                      />
+                      <Tooltip formatter={(value) => formatCurrency(Number(value) || 0)} />
+                      <Bar dataKey="amount" fill="#10b981" radius={[0, 4, 4, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="flex items-center justify-center h-64 text-slate-500">
+                    {t.dashboard.noData}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+
           {/* Average Check by Category */}
           <Card>
             <CardHeader>
@@ -494,21 +630,27 @@ export function IikoSettingsPage() {
                       <tr className="border-b">
                         <th className="text-left py-3 px-4 font-medium text-slate-500">Направление</th>
                         <th className="text-right py-3 px-4 font-medium text-slate-500">Выручка</th>
+                        <th className="text-right py-3 px-4 font-medium text-slate-500">%</th>
                         <th className="text-right py-3 px-4 font-medium text-slate-500">Заказов</th>
-                        <th className="text-right py-3 px-4 font-medium text-slate-500">Средний чек</th>
+                        <th className="text-right py-3 px-4 font-medium text-slate-500">Сред. чек</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {revenueData.byCategory.map((item) => (
-                        <tr key={item.category} className="border-b last:border-0 hover:bg-slate-50">
-                          <td className="py-3 px-4 font-medium">{item.category}</td>
-                          <td className="py-3 px-4 text-right">{formatCurrency(item.amount)}</td>
-                          <td className="py-3 px-4 text-right">{item.orderCount}</td>
-                          <td className="py-3 px-4 text-right font-medium text-primary">
-                            {formatCurrency(item.averageCheck)}
-                          </td>
-                        </tr>
-                      ))}
+                      {revenueData.byCategory
+                        .filter((item) => item.amount > 0)
+                        .map((item) => (
+                          <tr key={item.category} className="border-b last:border-0 hover:bg-slate-50">
+                            <td className="py-3 px-4 font-medium">{item.category || '(без категории)'}</td>
+                            <td className="py-3 px-4 text-right">{formatCurrency(item.amount)}</td>
+                            <td className="py-3 px-4 text-right text-slate-500">
+                              {((item.amount / revenueData.totalRevenue) * 100).toFixed(1)}%
+                            </td>
+                            <td className="py-3 px-4 text-right">{item.orderCount}</td>
+                            <td className="py-3 px-4 text-right font-medium text-primary">
+                              {formatCurrency(item.averageCheck)}
+                            </td>
+                          </tr>
+                        ))}
                     </tbody>
                   </table>
                 </div>
@@ -539,15 +681,10 @@ export function IikoSettingsPage() {
                     <thead>
                       <tr className="border-b">
                         <th className="text-left py-3 px-4 font-medium text-slate-500">#</th>
-                        <th className="text-left py-3 px-4 font-medium text-slate-500">
-                          {t.reports.category}
-                        </th>
-                        <th className="text-left py-3 px-4 font-medium text-slate-500">
-                          {t.iiko.quantity}
-                        </th>
-                        <th className="text-right py-3 px-4 font-medium text-slate-500">
-                          {t.iiko.amount}
-                        </th>
+                        <th className="text-left py-3 px-4 font-medium text-slate-500">Позиция</th>
+                        <th className="text-right py-3 px-4 font-medium text-slate-500">Кол-во</th>
+                        <th className="text-right py-3 px-4 font-medium text-slate-500">Сред. цена</th>
+                        <th className="text-right py-3 px-4 font-medium text-slate-500">Сумма</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -560,8 +697,11 @@ export function IikoSettingsPage() {
                               <p className="text-sm text-slate-500">{item.category}</p>
                             </div>
                           </td>
-                          <td className="py-3 px-4">{item.quantity}</td>
-                          <td className="py-3 px-4 text-right font-medium">
+                          <td className="py-3 px-4 text-right">{item.quantity}</td>
+                          <td className="py-3 px-4 text-right text-slate-600">
+                            {formatCurrency(item.quantity > 0 ? item.amount / item.quantity : 0)}
+                          </td>
+                          <td className="py-3 px-4 text-right font-medium text-primary">
                             {formatCurrency(item.amount)}
                           </td>
                         </tr>
