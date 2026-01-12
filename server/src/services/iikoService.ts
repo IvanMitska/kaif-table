@@ -265,10 +265,14 @@ export class IikoService {
     // Handle different response formats
     const rows = data.data || data.rows || []
 
-    // Log first row to see structure
+    // Log first rows to see structure and values
     if (rows.length > 0) {
       console.log('iiko OLAP first row keys:', Object.keys(rows[0]))
-      console.log('iiko OLAP first row sample:', JSON.stringify(rows[0]).substring(0, 500))
+      // Log first 5 rows with key fields
+      for (let i = 0; i < Math.min(5, rows.length); i++) {
+        const r = rows[i]
+        console.log(`iiko row ${i}: dish=${r['DishName']}, DishSumInt=${r['DishSumInt']}, DishDiscountSumInt=${r['DishDiscountSumInt']}, DishAmountInt=${r['DishAmountInt']}, category=${r['DishCategory']}`)
+      }
     } else {
       console.log('iiko OLAP: no rows returned')
     }
