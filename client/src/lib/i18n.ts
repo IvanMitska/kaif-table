@@ -71,6 +71,8 @@ export const translations = {
         actions: 'Действия',
       },
       deleteConfirm: 'Удалить транзакцию?',
+      showing: 'Показано',
+      of: 'из',
     },
     // Transaction Modal
     transactionModal: {
@@ -207,6 +209,23 @@ export const translations = {
       byHour: 'По часам',
       quantity: 'Количество',
       amount: 'Сумма',
+      // Quick period buttons
+      today: 'Сегодня',
+      yesterday: 'Вчера',
+      days7: '7 дней',
+      days30: '30 дней',
+      thisMonth: 'Этот месяц',
+      // Charts
+      revenueByHour: 'Выручка по часам',
+      revenueByCategory: 'Выручка по категориям',
+      avgCheckByCategory: 'Средний чек по направлениям',
+      // Table headers
+      direction: 'Направление',
+      orders: 'Заказов',
+      avgCheck: 'Сред. чек',
+      position: 'Позиция',
+      qty: 'Кол-во',
+      avgPrice: 'Сред. цена',
     },
     // Common
     common: {
@@ -295,6 +314,8 @@ export const translations = {
         actions: 'การดำเนินการ',
       },
       deleteConfirm: 'ลบธุรกรรม?',
+      showing: 'แสดง',
+      of: 'จาก',
     },
     // Transaction Modal
     transactionModal: {
@@ -431,6 +452,23 @@ export const translations = {
       byHour: 'ตามชั่วโมง',
       quantity: 'จำนวน',
       amount: 'ยอดเงิน',
+      // Quick period buttons
+      today: 'วันนี้',
+      yesterday: 'เมื่อวาน',
+      days7: '7 วัน',
+      days30: '30 วัน',
+      thisMonth: 'เดือนนี้',
+      // Charts
+      revenueByHour: 'รายได้ตามชั่วโมง',
+      revenueByCategory: 'รายได้ตามหมวดหมู่',
+      avgCheckByCategory: 'เช็คเฉลี่ยตามประเภท',
+      // Table headers
+      direction: 'ประเภท',
+      orders: 'ออเดอร์',
+      avgCheck: 'เช็คเฉลี่ย',
+      position: 'รายการ',
+      qty: 'จำนวน',
+      avgPrice: 'ราคาเฉลี่ย',
     },
     // Common
     common: {

@@ -261,7 +261,7 @@ export function IikoSettingsPage() {
                   setSyncDateTo(today)
                 }}
               >
-                Сегодня
+                {t.iiko.today}
               </Button>
               <Button
                 variant="outline"
@@ -272,7 +272,7 @@ export function IikoSettingsPage() {
                   setSyncDateTo(yesterday)
                 }}
               >
-                Вчера
+                {t.iiko.yesterday}
               </Button>
               <Button
                 variant="outline"
@@ -282,7 +282,7 @@ export function IikoSettingsPage() {
                   setSyncDateTo(format(new Date(), 'yyyy-MM-dd'))
                 }}
               >
-                7 дней
+                {t.iiko.days7}
               </Button>
               <Button
                 variant="outline"
@@ -292,7 +292,7 @@ export function IikoSettingsPage() {
                   setSyncDateTo(format(new Date(), 'yyyy-MM-dd'))
                 }}
               >
-                30 дней
+                {t.iiko.days30}
               </Button>
               <Button
                 variant="outline"
@@ -303,7 +303,7 @@ export function IikoSettingsPage() {
                   setSyncDateTo(format(new Date(), 'yyyy-MM-dd'))
                 }}
               >
-                Этот месяц
+                {t.iiko.thisMonth}
               </Button>
             </div>
 
@@ -538,7 +538,7 @@ export function IikoSettingsPage() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Clock className="h-5 w-5" />
-                  Выручка по часам
+                  {t.iiko.revenueByHour}
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -575,7 +575,7 @@ export function IikoSettingsPage() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <BarChart3 className="h-5 w-5" />
-                  Выручка по категориям
+                  {t.iiko.revenueByCategory}
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -615,7 +615,7 @@ export function IikoSettingsPage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <TrendingUp className="h-5 w-5" />
-                Средний чек по направлениям
+                {t.iiko.avgCheckByCategory}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -628,11 +628,11 @@ export function IikoSettingsPage() {
                   <table className="w-full">
                     <thead>
                       <tr className="border-b">
-                        <th className="text-left py-3 px-4 font-medium text-slate-500">Направление</th>
-                        <th className="text-right py-3 px-4 font-medium text-slate-500">Выручка</th>
+                        <th className="text-left py-3 px-4 font-medium text-slate-500">{t.iiko.direction}</th>
+                        <th className="text-right py-3 px-4 font-medium text-slate-500">{t.iiko.revenue}</th>
                         <th className="text-right py-3 px-4 font-medium text-slate-500">%</th>
-                        <th className="text-right py-3 px-4 font-medium text-slate-500">Заказов</th>
-                        <th className="text-right py-3 px-4 font-medium text-slate-500">Сред. чек</th>
+                        <th className="text-right py-3 px-4 font-medium text-slate-500">{t.iiko.orders}</th>
+                        <th className="text-right py-3 px-4 font-medium text-slate-500">{t.iiko.avgCheck}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -681,10 +681,10 @@ export function IikoSettingsPage() {
                     <thead>
                       <tr className="border-b">
                         <th className="text-left py-3 px-4 font-medium text-slate-500">#</th>
-                        <th className="text-left py-3 px-4 font-medium text-slate-500">Позиция</th>
-                        <th className="text-right py-3 px-4 font-medium text-slate-500">Кол-во</th>
-                        <th className="text-right py-3 px-4 font-medium text-slate-500">Сред. цена</th>
-                        <th className="text-right py-3 px-4 font-medium text-slate-500">Сумма</th>
+                        <th className="text-left py-3 px-4 font-medium text-slate-500">{t.iiko.position}</th>
+                        <th className="text-right py-3 px-4 font-medium text-slate-500">{t.iiko.qty}</th>
+                        <th className="text-right py-3 px-4 font-medium text-slate-500">{t.iiko.avgPrice}</th>
+                        <th className="text-right py-3 px-4 font-medium text-slate-500">{t.iiko.amount}</th>
                       </tr>
                     </thead>
                     <tbody>

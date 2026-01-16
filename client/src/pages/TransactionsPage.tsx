@@ -321,7 +321,7 @@ export function TransactionsPage() {
               {/* Pagination */}
               <div className="flex items-center justify-between px-4 py-3 border-t border-slate-100 bg-slate-50/30">
                 <p className="text-sm text-slate-500">
-                  Показано {(page - 1) * limit + 1} — {Math.min(page * limit, total)} из {total}
+                  {t.transactions.showing} {(page - 1) * limit + 1} — {Math.min(page * limit, total)} {t.transactions.of} {total}
                 </p>
                 <div className="flex items-center gap-1">
                   <Button
