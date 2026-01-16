@@ -44,6 +44,16 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* Disable all zoom gestures on mobile */
+html {
+  touch-action: manipulation;
+  -ms-touch-action: manipulation;
+}
+
+* {
+  touch-action: manipulation;
+}
+
 #root {
   min-height: 100vh;
 }
