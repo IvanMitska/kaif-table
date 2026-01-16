@@ -77,9 +77,9 @@ html {
   background: #94a3b8;
 }
 
-/* Smooth transitions */
-* {
-  transition-property: background-color, border-color, color, fill, stroke, opacity, box-shadow, transform;
+/* Smooth transitions - exclude sidebar and backdrop for custom animation */
+*:not([data-sidebar]):not([data-backdrop]) {
+  transition-property: background-color, border-color, color, fill, stroke, opacity, box-shadow;
   transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
   transition-duration: 150ms;
 }

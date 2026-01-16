@@ -40,21 +40,30 @@ export function Layout({ children }: LayoutProps) {
     <div className="min-h-screen bg-background">
       {/* Mobile sidebar backdrop */}
       <div
+        data-backdrop
         className={cn(
-          "fixed inset-0 z-40 bg-black/50 backdrop-blur-sm lg:hidden transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]",
+          "fixed inset-0 z-40 bg-black/50 backdrop-blur-sm lg:hidden",
           sidebarOpen ? "opacity-100 visible" : "opacity-0 invisible"
         )}
+        style={{
+          transition: 'opacity 0.4s ease-out, visibility 0.4s ease-out'
+        }}
         onClick={() => setSidebarOpen(false)}
       />
 
       {/* Sidebar */}
       <aside
+        data-sidebar
         className={cn(
-          "fixed inset-y-0 left-0 z-50 bg-white border-r border-border/50 shadow-2xl lg:shadow-none transition-transform duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] will-change-transform",
+          "fixed inset-y-0 left-0 z-50 bg-white border-r border-border/50 shadow-2xl lg:shadow-none",
           sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0",
           sidebarCollapsed ? "lg:w-20" : "lg:w-64",
           "w-72"
         )}
+        style={{
+          transition: 'transform 0.4s cubic-bezier(0.32, 0.72, 0, 1)',
+          willChange: 'transform'
+        }}
       >
         {/* Logo */}
         <div className={cn(
