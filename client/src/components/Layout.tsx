@@ -41,8 +41,8 @@ export function Layout({ children }: LayoutProps) {
       {/* Mobile sidebar backdrop */}
       <div
         className={cn(
-          "fixed inset-0 z-40 bg-black/60 backdrop-blur-sm lg:hidden transition-opacity duration-300 ease-out",
-          sidebarOpen ? "opacity-100" : "opacity-0 pointer-events-none"
+          "fixed inset-0 z-40 bg-black/50 backdrop-blur-sm lg:hidden transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]",
+          sidebarOpen ? "opacity-100 visible" : "opacity-0 invisible"
         )}
         onClick={() => setSidebarOpen(false)}
       />
@@ -50,10 +50,10 @@ export function Layout({ children }: LayoutProps) {
       {/* Sidebar */}
       <aside
         className={cn(
-          "fixed inset-y-0 left-0 z-50 bg-white border-r border-border/50 shadow-xl lg:shadow-none transform transition-transform duration-300 ease-out",
+          "fixed inset-y-0 left-0 z-50 bg-white border-r border-border/50 shadow-2xl lg:shadow-none transition-transform duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] will-change-transform",
           sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0",
           sidebarCollapsed ? "lg:w-20" : "lg:w-64",
-          "w-64"
+          "w-72"
         )}
       >
         {/* Logo */}
