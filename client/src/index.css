@@ -91,6 +91,23 @@ input[type="date"] {
   color-scheme: light;
 }
 
+/* Prevent iOS Safari auto-zoom on input focus */
+@media screen and (max-width: 768px) {
+  input,
+  input[type="text"],
+  input[type="password"],
+  input[type="email"],
+  input[type="number"],
+  input[type="tel"],
+  input[type="url"],
+  input[type="search"],
+  input[type="date"],
+  textarea,
+  select {
+    font-size: 16px !important;
+  }
+}
+
 /* Animation keyframes */
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(-10px); }
