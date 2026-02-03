@@ -2,35 +2,15 @@
 <html lang="ru">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>K</text></svg>" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0, viewport-fit=cover" />
+    <link rel="icon" type="image/jpeg" href="/logo/kaif-logo.jpg" />
+    <link rel="apple-touch-icon" href="/logo/kaif-logo.jpg" />
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="theme-color" content="#8b5cf6" />
     <title>KAIF Finance</title>
-    <style>
-      /* Prevent zoom on iOS */
-      html, body {
-        touch-action: pan-x pan-y;
-        -webkit-text-size-adjust: 100%;
-        -ms-text-size-adjust: 100%;
-      }
-      input, textarea, select {
-        font-size: 16px !important;
-      }
-    </style>
-    <script>
-      // Prevent zoom on double tap
-      document.addEventListener('touchstart', function(e) {
-        if (e.touches.length > 1) e.preventDefault();
-      }, { passive: false });
-
-      var lastTouchEnd = 0;
-      document.addEventListener('touchend', function(e) {
-        var now = Date.now();
-        if (now - lastTouchEnd <= 300) e.preventDefault();
-        lastTouchEnd = now;
-      }, { passive: false });
-    </script>
   </head>
   <body>
     <div id="root"></div>

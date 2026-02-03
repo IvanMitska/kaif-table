@@ -47,6 +47,7 @@ export function IikoSettingsPage() {
   // Sync date range
   const [syncDateFrom, setSyncDateFrom] = useState(format(subDays(new Date(), 7), 'yyyy-MM-dd'))
   const [syncDateTo, setSyncDateTo] = useState(format(new Date(), 'yyyy-MM-dd'))
+  const [activePeriod, setActivePeriod] = useState<string>('7days')
 
   // Connection test result
   const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null)
@@ -144,102 +145,6 @@ export function IikoSettingsPage() {
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
-        {/* Settings Card */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Settings className="h-5 w-5" />
-              {t.iiko.settings}
-            </CardTitle>
-            <CardDescription>
-              {settings?.lastSyncAt
-                ? `${t.iiko.lastSync}: ${format(new Date(settings.lastSyncAt), 'dd.MM.yyyy HH:mm')}`
-                : `${t.iiko.lastSync}: ${t.iiko.never}`}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSaveSettings} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="serverUrl">{t.iiko.serverUrl}</Label>
-                <div className="relative">
-                  <Server className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                  <Input
-                    id="serverUrl"
-                    value={serverUrl}
-                    onChange={(e) => setServerUrl(e.target.value)}
-                    placeholder={t.iiko.serverUrlPlaceholder}
-                    className="pl-10"
-                    required
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="login">{t.iiko.login}</Label>
-                <Input
-                  id="login"
-                  value={login}
-                  onChange={(e) => setLogin(e.target.value)}
-                  placeholder={t.iiko.loginPlaceholder}
-                  required
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="password">{t.iiko.password}</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder={t.iiko.passwordPlaceholder}
-                  required={!settings}
-                />
-              </div>
-
-              {/* Test result */}
-              {testResult && (
-                <div
-                  className={`flex items-center gap-2 p-3 rounded-lg ${
-                    testResult.success ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'
-                  }`}
-                >
-                  {testResult.success ? (
-                    <CheckCircle2 className="h-5 w-5" />
-                  ) : (
-                    <AlertCircle className="h-5 w-5" />
-                  )}
-                  <span className="text-sm">{testResult.message}</span>
-                </div>
-              )}
-
-              {/* Save result */}
-              {saveSettingsMutation.isSuccess && (
-                <div className="flex items-center gap-2 p-3 rounded-lg bg-green-50 text-green-700">
-                  <CheckCircle2 className="h-5 w-5" />
-                  <span className="text-sm">{t.iiko.settingsSaved}</span>
-                </div>
-              )}
-
-              <div className="flex gap-2">
-                <Button type="submit" disabled={saveSettingsMutation.isPending}>
-                  {saveSettingsMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  {saveSettingsMutation.isPending ? t.iiko.saving : t.iiko.saveSettings}
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => testConnectionMutation.mutate()}
-                  disabled={testConnectionMutation.isPending || !settings}
-                >
-                  {testConnectionMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  {testConnectionMutation.isPending ? t.iiko.testing : t.iiko.testConnection}
-                </Button>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
-
         {/* Sync Card */}
         <Card>
           <CardHeader>
@@ -251,60 +156,87 @@ export function IikoSettingsPage() {
           </CardHeader>
           <CardContent className="space-y-4">
             {/* Quick period buttons */}
-            <div className="flex flex-wrap gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  const today = format(new Date(), 'yyyy-MM-dd')
-                  setSyncDateFrom(today)
-                  setSyncDateTo(today)
-                }}
-              >
-                {t.iiko.today}
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  const yesterday = format(subDays(new Date(), 1), 'yyyy-MM-dd')
-                  setSyncDateFrom(yesterday)
-                  setSyncDateTo(yesterday)
-                }}
-              >
-                {t.iiko.yesterday}
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  setSyncDateFrom(format(subDays(new Date(), 7), 'yyyy-MM-dd'))
-                  setSyncDateTo(format(new Date(), 'yyyy-MM-dd'))
-                }}
-              >
-                {t.iiko.days7}
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  setSyncDateFrom(format(subDays(new Date(), 30), 'yyyy-MM-dd'))
-                  setSyncDateTo(format(new Date(), 'yyyy-MM-dd'))
-                }}
-              >
-                {t.iiko.days30}
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  const now = new Date()
-                  setSyncDateFrom(format(new Date(now.getFullYear(), now.getMonth(), 1), 'yyyy-MM-dd'))
-                  setSyncDateTo(format(new Date(), 'yyyy-MM-dd'))
-                }}
-              >
-                {t.iiko.thisMonth}
-              </Button>
+            <div className="bg-slate-100 p-1.5 rounded-2xl">
+              <div className="grid grid-cols-3 sm:grid-cols-5 gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const today = format(new Date(), 'yyyy-MM-dd')
+                    setSyncDateFrom(today)
+                    setSyncDateTo(today)
+                    setActivePeriod('today')
+                  }}
+                  className={`h-11 sm:h-10 px-3 text-sm font-medium rounded-xl transition-all ${
+                    activePeriod === 'today'
+                      ? 'bg-white text-primary shadow-sm'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  {t.iiko.today}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const yesterday = format(subDays(new Date(), 1), 'yyyy-MM-dd')
+                    setSyncDateFrom(yesterday)
+                    setSyncDateTo(yesterday)
+                    setActivePeriod('yesterday')
+                  }}
+                  className={`h-11 sm:h-10 px-3 text-sm font-medium rounded-xl transition-all ${
+                    activePeriod === 'yesterday'
+                      ? 'bg-white text-primary shadow-sm'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  {t.iiko.yesterday}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSyncDateFrom(format(subDays(new Date(), 7), 'yyyy-MM-dd'))
+                    setSyncDateTo(format(new Date(), 'yyyy-MM-dd'))
+                    setActivePeriod('7days')
+                  }}
+                  className={`h-11 sm:h-10 px-3 text-sm font-medium rounded-xl transition-all ${
+                    activePeriod === '7days'
+                      ? 'bg-white text-primary shadow-sm'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  {t.iiko.days7}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSyncDateFrom(format(subDays(new Date(), 30), 'yyyy-MM-dd'))
+                    setSyncDateTo(format(new Date(), 'yyyy-MM-dd'))
+                    setActivePeriod('30days')
+                  }}
+                  className={`h-11 sm:h-10 px-3 text-sm font-medium rounded-xl transition-all ${
+                    activePeriod === '30days'
+                      ? 'bg-white text-primary shadow-sm'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  {t.iiko.days30}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const now = new Date()
+                    setSyncDateFrom(format(new Date(now.getFullYear(), now.getMonth(), 1), 'yyyy-MM-dd'))
+                    setSyncDateTo(format(new Date(), 'yyyy-MM-dd'))
+                    setActivePeriod('month')
+                  }}
+                  className={`h-11 sm:h-10 px-3 text-sm font-medium rounded-xl transition-all ${
+                    activePeriod === 'month'
+                      ? 'bg-white text-primary shadow-sm'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  {t.iiko.thisMonth}
+                </button>
+              </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
@@ -313,7 +245,10 @@ export function IikoSettingsPage() {
                 <Input
                   type="date"
                   value={syncDateFrom}
-                  onChange={(e) => setSyncDateFrom(e.target.value)}
+                  onChange={(e) => {
+                    setSyncDateFrom(e.target.value)
+                    setActivePeriod('custom')
+                  }}
                 />
               </div>
               <div className="space-y-2">
@@ -321,7 +256,10 @@ export function IikoSettingsPage() {
                 <Input
                   type="date"
                   value={syncDateTo}
-                  onChange={(e) => setSyncDateTo(e.target.value)}
+                  onChange={(e) => {
+                    setSyncDateTo(e.target.value)
+                    setActivePeriod('custom')
+                  }}
                 />
               </div>
             </div>
@@ -349,9 +287,9 @@ export function IikoSettingsPage() {
             <Button
               onClick={() => syncMutation.mutate()}
               disabled={syncMutation.isPending || !settings?.isActive}
-              className="w-full"
+              className="w-full h-12 text-base font-semibold rounded-xl bg-gradient-to-r from-violet-500 to-purple-500 hover:from-violet-600 hover:to-purple-600 border-0 shadow-lg shadow-purple-500/25"
             >
-              {syncMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {syncMutation.isPending && <Loader2 className="mr-2 h-5 w-5 animate-spin" />}
               {syncMutation.isPending ? t.iiko.syncing : t.iiko.syncData}
             </Button>
 
@@ -718,6 +656,103 @@ export function IikoSettingsPage() {
           </Card>
         </>
       )}
+
+      {/* Settings Card - at the bottom */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Settings className="h-5 w-5" />
+            {t.iiko.settings}
+          </CardTitle>
+          <CardDescription>
+            {settings?.lastSyncAt
+              ? `${t.iiko.lastSync}: ${format(new Date(settings.lastSyncAt), 'dd.MM.yyyy HH:mm')}`
+              : `${t.iiko.lastSync}: ${t.iiko.never}`}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSaveSettings} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="serverUrl">{t.iiko.serverUrl}</Label>
+              <div className="relative">
+                <Server className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                <Input
+                  id="serverUrl"
+                  value={serverUrl}
+                  onChange={(e) => setServerUrl(e.target.value)}
+                  placeholder={t.iiko.serverUrlPlaceholder}
+                  className="pl-10"
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="login">{t.iiko.login}</Label>
+              <Input
+                id="login"
+                value={login}
+                onChange={(e) => setLogin(e.target.value)}
+                placeholder={t.iiko.loginPlaceholder}
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="password">{t.iiko.password}</Label>
+              <Input
+                id="password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder={t.iiko.passwordPlaceholder}
+                required={!settings}
+              />
+            </div>
+
+            {/* Test result */}
+            {testResult && (
+              <div
+                className={`flex items-center gap-2 p-3 rounded-lg ${
+                  testResult.success ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'
+                }`}
+              >
+                {testResult.success ? (
+                  <CheckCircle2 className="h-5 w-5" />
+                ) : (
+                  <AlertCircle className="h-5 w-5" />
+                )}
+                <span className="text-sm">{testResult.message}</span>
+              </div>
+            )}
+
+            {/* Save result */}
+            {saveSettingsMutation.isSuccess && (
+              <div className="flex items-center gap-2 p-3 rounded-lg bg-green-50 text-green-700">
+                <CheckCircle2 className="h-5 w-5" />
+                <span className="text-sm">{t.iiko.settingsSaved}</span>
+              </div>
+            )}
+
+            <div className="flex flex-col sm:flex-row gap-2">
+              <Button type="submit" disabled={saveSettingsMutation.isPending} className="w-full sm:w-auto">
+                {saveSettingsMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {saveSettingsMutation.isPending ? t.iiko.saving : t.iiko.saveSettings}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => testConnectionMutation.mutate()}
+                disabled={testConnectionMutation.isPending || !settings}
+                className="w-full sm:w-auto"
+              >
+                {testConnectionMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {testConnectionMutation.isPending ? t.iiko.testing : t.iiko.testConnection}
+              </Button>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
     </div>
   )
 }
