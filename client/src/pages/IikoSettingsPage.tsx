@@ -166,10 +166,10 @@ export function IikoSettingsPage() {
                     setSyncDateTo(today)
                     setActivePeriod('today')
                   }}
-                  className={`h-11 sm:h-10 px-3 text-sm font-medium rounded-xl transition-all ${
+                  className={`h-11 sm:h-10 px-3 text-sm font-medium rounded-xl transition-none ${
                     activePeriod === 'today'
-                      ? 'bg-white text-primary shadow-sm'
-                      : 'text-slate-600 hover:text-slate-900'
+                      ? 'bg-white text-violet-600 shadow-sm'
+                      : 'text-slate-600 active:bg-white/50'
                   }`}
                 >
                   {t.iiko.today}
@@ -182,10 +182,10 @@ export function IikoSettingsPage() {
                     setSyncDateTo(yesterday)
                     setActivePeriod('yesterday')
                   }}
-                  className={`h-11 sm:h-10 px-3 text-sm font-medium rounded-xl transition-all ${
+                  className={`h-11 sm:h-10 px-3 text-sm font-medium rounded-xl transition-none ${
                     activePeriod === 'yesterday'
-                      ? 'bg-white text-primary shadow-sm'
-                      : 'text-slate-600 hover:text-slate-900'
+                      ? 'bg-white text-violet-600 shadow-sm'
+                      : 'text-slate-600 active:bg-white/50'
                   }`}
                 >
                   {t.iiko.yesterday}
@@ -197,10 +197,10 @@ export function IikoSettingsPage() {
                     setSyncDateTo(format(new Date(), 'yyyy-MM-dd'))
                     setActivePeriod('7days')
                   }}
-                  className={`h-11 sm:h-10 px-3 text-sm font-medium rounded-xl transition-all ${
+                  className={`h-11 sm:h-10 px-3 text-sm font-medium rounded-xl transition-none ${
                     activePeriod === '7days'
-                      ? 'bg-white text-primary shadow-sm'
-                      : 'text-slate-600 hover:text-slate-900'
+                      ? 'bg-white text-violet-600 shadow-sm'
+                      : 'text-slate-600 active:bg-white/50'
                   }`}
                 >
                   {t.iiko.days7}
@@ -212,10 +212,10 @@ export function IikoSettingsPage() {
                     setSyncDateTo(format(new Date(), 'yyyy-MM-dd'))
                     setActivePeriod('30days')
                   }}
-                  className={`h-11 sm:h-10 px-3 text-sm font-medium rounded-xl transition-all ${
+                  className={`h-11 sm:h-10 px-3 text-sm font-medium rounded-xl transition-none ${
                     activePeriod === '30days'
-                      ? 'bg-white text-primary shadow-sm'
-                      : 'text-slate-600 hover:text-slate-900'
+                      ? 'bg-white text-violet-600 shadow-sm'
+                      : 'text-slate-600 active:bg-white/50'
                   }`}
                 >
                   {t.iiko.days30}
@@ -228,10 +228,10 @@ export function IikoSettingsPage() {
                     setSyncDateTo(format(new Date(), 'yyyy-MM-dd'))
                     setActivePeriod('month')
                   }}
-                  className={`h-11 sm:h-10 px-3 text-sm font-medium rounded-xl transition-all ${
+                  className={`h-11 sm:h-10 px-3 text-sm font-medium rounded-xl transition-none ${
                     activePeriod === 'month'
-                      ? 'bg-white text-primary shadow-sm'
-                      : 'text-slate-600 hover:text-slate-900'
+                      ? 'bg-white text-violet-600 shadow-sm'
+                      : 'text-slate-600 active:bg-white/50'
                   }`}
                 >
                   {t.iiko.thisMonth}
@@ -239,8 +239,8 @@ export function IikoSettingsPage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2 min-w-0">
                 <Label>{t.iiko.dateFrom}</Label>
                 <Input
                   type="date"
@@ -249,9 +249,10 @@ export function IikoSettingsPage() {
                     setSyncDateFrom(e.target.value)
                     setActivePeriod('custom')
                   }}
+                  className="text-sm"
                 />
               </div>
-              <div className="space-y-2">
+              <div className="space-y-2 min-w-0">
                 <Label>{t.iiko.dateTo}</Label>
                 <Input
                   type="date"
@@ -260,6 +261,7 @@ export function IikoSettingsPage() {
                     setSyncDateTo(e.target.value)
                     setActivePeriod('custom')
                   }}
+                  className="text-sm"
                 />
               </div>
             </div>
