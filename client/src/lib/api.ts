@@ -190,6 +190,140 @@ export interface IikoTopItem {
   amount: number
 }
 
+// Extended Analytics Types
+export interface WaiterAnalytics {
+  byWaiter: Array<{
+    waiterId: string
+    waiterName: string
+    revenue: number
+    quantity: number
+    orderCount: number
+    averageCheck: number
+    guestCount: number
+  }>
+  totalWaiters: number
+}
+
+export interface PaymentAnalytics {
+  byPaymentType: Array<{
+    paymentType: string
+    revenue: number
+    orderCount: number
+    percentage: number
+  }>
+  totalRevenue: number
+}
+
+export interface TableAnalytics {
+  byTable: Array<{
+    tableNum: string
+    revenue: number
+    orderCount: number
+    averageCheck: number
+    guestCount: number
+  }>
+  totalTables: number
+}
+
+export interface OrderTypeAnalytics {
+  byOrderType: Array<{
+    orderType: string
+    revenue: number
+    orderCount: number
+    percentage: number
+  }>
+  totalRevenue: number
+}
+
+export interface ProfitabilityAnalytics {
+  summary: {
+    totalRevenue: number
+    totalCost: number
+    totalProfit: number
+    overallMargin: number
+    hasCostData: boolean
+  }
+  byCategory: Array<{
+    category: string
+    revenue: number
+    cost: number
+    profit: number
+    margin: number
+    quantity: number
+  }>
+  topProfitableItems: Array<{
+    dishId: string
+    dishName: string
+    category: string
+    revenue: number
+    cost: number
+    profit: number
+    margin: number
+    quantity: number
+  }>
+}
+
+export interface DiscountAnalytics {
+  summary: {
+    totalDiscount: number
+    totalRevenue: number
+    discountPercentage: number
+  }
+  byDiscountType: Array<{
+    discountType: string
+    totalDiscount: number
+    orderCount: number
+    percentage: number
+  }>
+}
+
+export interface ServiceSpeedAnalytics {
+  summary: {
+    avgServiceMinutes: number
+    medianServiceMinutes: number
+    totalOrders: number
+  }
+  byHour: Array<{
+    hour: number
+    avgMinutes: number
+    orderCount: number
+  }>
+}
+
+export interface GuestAnalytics {
+  summary: {
+    totalGuests: number
+    totalRevenue: number
+    avgCheckPerGuest: number
+    ordersWithGuestData: number
+    hasGuestData: boolean
+  }
+  byDay: Array<{
+    date: string
+    guests: number
+    revenue: number
+    avgCheckPerGuest: number
+  }>
+  byGuestCount: Array<{
+    label: string
+    orderCount: number
+    revenue: number
+    avgCheck: number
+    avgCheckPerGuest: number
+  }>
+}
+
+export interface CookingPlaceAnalytics {
+  byCookingPlace: Array<{
+    cookingPlace: string
+    revenue: number
+    quantity: number
+    orderCount: number
+    percentage: number
+  }>
+  totalRevenue: number
+}
+
 export const iikoApi = {
   getSettings: async (): Promise<IikoSettings | null> => {
     const { data } = await api.get('/iiko/settings')
@@ -213,6 +347,43 @@ export const iikoApi = {
   },
   getTopItems: async (dateFrom: string, dateTo: string, limit?: number): Promise<IikoTopItem[]> => {
     const { data } = await api.get('/iiko/top-items', { params: { dateFrom, dateTo, limit } })
+    return data
+  },
+  // Extended Analytics
+  getWaiterAnalytics: async (dateFrom: string, dateTo: string): Promise<WaiterAnalytics> => {
+    const { data } = await api.get('/iiko/analytics/waiters', { params: { dateFrom, dateTo } })
+    return data
+  },
+  getPaymentAnalytics: async (dateFrom: string, dateTo: string): Promise<PaymentAnalytics> => {
+    const { data } = await api.get('/iiko/analytics/payments', { params: { dateFrom, dateTo } })
+    return data
+  },
+  getTableAnalytics: async (dateFrom: string, dateTo: string): Promise<TableAnalytics> => {
+    const { data } = await api.get('/iiko/analytics/tables', { params: { dateFrom, dateTo } })
+    return data
+  },
+  getOrderTypeAnalytics: async (dateFrom: string, dateTo: string): Promise<OrderTypeAnalytics> => {
+    const { data } = await api.get('/iiko/analytics/order-types', { params: { dateFrom, dateTo } })
+    return data
+  },
+  getProfitabilityAnalytics: async (dateFrom: string, dateTo: string): Promise<ProfitabilityAnalytics> => {
+    const { data } = await api.get('/iiko/analytics/profitability', { params: { dateFrom, dateTo } })
+    return data
+  },
+  getDiscountAnalytics: async (dateFrom: string, dateTo: string): Promise<DiscountAnalytics> => {
+    const { data } = await api.get('/iiko/analytics/discounts', { params: { dateFrom, dateTo } })
+    return data
+  },
+  getServiceSpeedAnalytics: async (dateFrom: string, dateTo: string): Promise<ServiceSpeedAnalytics> => {
+    const { data } = await api.get('/iiko/analytics/service-speed', { params: { dateFrom, dateTo } })
+    return data
+  },
+  getGuestAnalytics: async (dateFrom: string, dateTo: string): Promise<GuestAnalytics> => {
+    const { data } = await api.get('/iiko/analytics/guests', { params: { dateFrom, dateTo } })
+    return data
+  },
+  getCookingPlaceAnalytics: async (dateFrom: string, dateTo: string): Promise<CookingPlaceAnalytics> => {
+    const { data } = await api.get('/iiko/analytics/cooking-places', { params: { dateFrom, dateTo } })
     return data
   },
 }

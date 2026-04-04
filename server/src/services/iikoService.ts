@@ -31,6 +31,20 @@ interface OlapSalesItem {
   openTime: string
   departmentId: string
   departmentName: string
+  // Extended fields for deep analytics (verified working with iiko Syrve)
+  waiterId: string
+  waiterName: string
+  paymentType: string
+  orderType: string
+  tableNum: string
+  guestCount: number
+  closeTime: string
+  discountType: string
+  sessionNum: string
+  productCost: number
+  // Additional analytics fields
+  cookingPlace: string
+  nonCashPaymentType: string
 }
 
 interface OlapReportResponse {
@@ -130,7 +144,18 @@ export class IikoService {
           'DishGroup',
           'DishGroup.Id',
           'OpenTime',
+          'CloseTime',
           'OrderNum',
+          // Extended fields for analytics (verified working with iiko Syrve API)
+          'Cashier',              // Waiter/server who handled the order
+          'Cashier.Id',           // Waiter ID
+          'PayTypes',             // Payment method (Cash, Bank cards, QR)
+          'TableNum',             // Table number
+          'GuestNum',             // Guest count per order
+          'OrderDiscount.Type',   // Discount type applied
+          'CookingPlace',         // Kitchen place (Bar, Kitchen Hot, Pool)
+          'SessionNum',           // Cash shift session number
+          'NonCashPaymentType',   // Non-cash payment details
         ],
         groupByColFields: [],
         aggregateFields: [
@@ -299,6 +324,20 @@ export class IikoService {
         openTime: row['OpenTime'] || row['CloseTime'] || row['OpenDate'] || '',
         departmentId: row['Department.Id'] || '',
         departmentName: row['Department'] || row['Department.Name'] || '',
+        // Extended fields for deep analytics (verified working with iiko Syrve)
+        waiterId: row['Cashier.Id'] || '',
+        waiterName: row['Cashier'] || '',
+        paymentType: row['PayTypes'] || '',
+        orderType: row['OrderType'] || '',
+        tableNum: String(row['TableNum'] || ''),
+        guestCount: parseInt(row['GuestNum'] || '0') || 0,
+        closeTime: row['CloseTime'] || '',
+        discountType: row['OrderDiscount.Type'] || '',
+        sessionNum: String(row['SessionNum'] || ''),
+        productCost: 0,  // Not available in standard OLAP
+        // Additional fields we can use for analytics
+        cookingPlace: row['CookingPlace'] || '',
+        nonCashPaymentType: row['NonCashPaymentType'] || '',
       }
 
       items.push(item)
@@ -354,6 +393,266 @@ export class IikoService {
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unknown error'
       return { success: false, message }
+    }
+  }
+
+  /**
+   * Get available OLAP fields by testing each one
+   * This helps discover what data iiko Syrve API supports
+   */
+  async discoverOlapFields(filter: OlapReportFilter): Promise<{
+    working: string[]
+    failed: string[]
+    fieldData: Record<string, any[]>
+  }> {
+    const token = await this.authenticate()
+
+    // List of potential OLAP fields to test
+    const fieldsToTest = [
+      // Basic fields
+      'Department', 'Department.Id', 'DishId', 'DishName', 'DishCode',
+      'DishCategory', 'DishCategory.Id', 'DishGroup', 'DishGroup.Id',
+      'OpenTime', 'CloseTime', 'OrderNum',
+      // Staff fields
+      'Cashier', 'Cashier.Id', 'Waiter', 'Waiter.Id', 'User', 'User.Id',
+      // Payment fields
+      'PayTypes', 'PaymentType', 'Payment', 'Payment.Type',
+      // Order fields
+      'OrderType', 'OrderType.Id', 'DeliveryType', 'ServiceType',
+      // Table/Guests
+      'TableNum', 'Table', 'Table.Id', 'GuestsNum', 'GuestNum', 'Guests',
+      // Discount fields
+      'DiscountType', 'Discount', 'Discount.Type', 'OrderDiscount.Type',
+      // Session fields
+      'Session', 'Session.Number', 'SessionNum', 'CashShift',
+      // Product cost fields
+      'ProductCostBase', 'ProductCostBase.ProductCost', 'FoodCost',
+      // Time fields
+      'OpenDate', 'OpenDate.Typed', 'CloseDate', 'Hour', 'DayOfWeek',
+      // Other potential fields
+      'Conception', 'Conception.Id', 'CookingPlace', 'CookingPlace.Id',
+      'DeletedWithWriteoff', 'OrderDeleted', 'Storned',
+      'RemovalType', 'JurName', 'NonCashPaymentType'
+    ]
+
+    const working: string[] = []
+    const failed: string[] = []
+    const fieldData: Record<string, any[]> = {}
+
+    // Test each field individually
+    for (const field of fieldsToTest) {
+      try {
+        const requestBody = {
+          reportType: 'SALES',
+          buildSummary: 'false',
+          groupByRowFields: [field],
+          groupByColFields: [],
+          aggregateFields: ['DishAmountInt'],
+          filters: {
+            'OpenDate.Typed': {
+              filterType: 'DateRange',
+              periodType: 'CUSTOM',
+              from: filter.dateFrom,
+              to: filter.dateTo,
+              includeLow: true,
+              includeHigh: true,
+            },
+          },
+        }
+
+        const response = await axios.post(
+          `${this.config.serverUrl}/resto/api/v2/reports/olap`,
+          requestBody,
+          {
+            params: { key: token },
+            headers: { 'Content-Type': 'application/json' },
+            timeout: 10000,
+          }
+        )
+
+        const rows = response.data.data || response.data.rows || []
+        const uniqueValues = [...new Set(rows.map((r: any) => r[field]).filter(Boolean))]
+
+        working.push(field)
+        fieldData[field] = uniqueValues.slice(0, 20) // First 20 unique values
+
+        console.log(`✓ Field "${field}" works, ${uniqueValues.length} unique values`)
+      } catch (error: any) {
+        failed.push(field)
+        // Don't log every failure, just track it
+      }
+    }
+
+    return { working, failed, fieldData }
+  }
+
+  /**
+   * Explore different report types available in iiko
+   */
+  async discoverReportTypes(): Promise<any> {
+    const token = await this.authenticate()
+
+    const reportTypes = ['SALES', 'TRANSACTIONS', 'OLAP', 'DISHES', 'ORDERS', 'PAYMENTS', 'WRITEOFFS']
+    const results: Record<string, any> = {}
+
+    for (const reportType of reportTypes) {
+      try {
+        const requestBody = {
+          reportType,
+          buildSummary: 'false',
+          groupByRowFields: ['Department'],
+          groupByColFields: [],
+          aggregateFields: ['DishAmountInt'],
+          filters: {},
+        }
+
+        const response = await axios.post(
+          `${this.config.serverUrl}/resto/api/v2/reports/olap`,
+          requestBody,
+          {
+            params: { key: token },
+            headers: { 'Content-Type': 'application/json' },
+            timeout: 10000,
+          }
+        )
+
+        results[reportType] = {
+          success: true,
+          rowCount: (response.data.data || response.data.rows || []).length,
+          sampleKeys: Object.keys((response.data.data || response.data.rows || [])[0] || {}),
+        }
+      } catch (error: any) {
+        results[reportType] = {
+          success: false,
+          error: error.response?.data || error.message,
+        }
+      }
+    }
+
+    return results
+  }
+
+  /**
+   * Get all available API endpoints info
+   */
+  async exploreApiEndpoints(): Promise<any> {
+    const token = await this.authenticate()
+    const results: Record<string, any> = {}
+
+    // List of endpoints to explore
+    const endpoints = [
+      { name: 'departments', url: '/resto/api/corporation/departments', method: 'GET' },
+      { name: 'employees', url: '/resto/api/employees', method: 'GET' },
+      { name: 'nomenclature', url: '/resto/api/v2/entities/products/list', method: 'GET' },
+      { name: 'productCategories', url: '/resto/api/v2/entities/products/category/list', method: 'GET' },
+      { name: 'paymentTypes', url: '/resto/api/v2/entities/paymentTypes', method: 'GET' },
+      { name: 'discountTypes', url: '/resto/api/v2/entities/discounts', method: 'GET' },
+      { name: 'orderTypes', url: '/resto/api/v2/entities/orderTypes', method: 'GET' },
+      { name: 'tables', url: '/resto/api/v2/entities/tables', method: 'GET' },
+      { name: 'terminals', url: '/resto/api/v2/entities/terminals', method: 'GET' },
+      { name: 'cashRegisters', url: '/resto/api/v2/entities/cashRegister', method: 'GET' },
+      { name: 'conceptions', url: '/resto/api/v2/entities/conceptions', method: 'GET' },
+      { name: 'cookingPlaces', url: '/resto/api/v2/entities/cookingPlaces', method: 'GET' },
+    ]
+
+    for (const endpoint of endpoints) {
+      try {
+        const response = await axios({
+          method: endpoint.method,
+          url: `${this.config.serverUrl}${endpoint.url}`,
+          params: { key: token },
+          timeout: 10000,
+        })
+
+        const data = response.data
+        let count = 0
+        let sample: any = null
+
+        if (Array.isArray(data)) {
+          count = data.length
+          sample = data[0]
+        } else if (data && typeof data === 'object') {
+          const keys = Object.keys(data)
+          count = keys.length
+          sample = data[keys[0]] || data
+        }
+
+        results[endpoint.name] = {
+          success: true,
+          count,
+          sampleKeys: sample ? Object.keys(sample).slice(0, 10) : [],
+          sample: sample ? JSON.stringify(sample).slice(0, 200) : null,
+        }
+      } catch (error: any) {
+        results[endpoint.name] = {
+          success: false,
+          error: (error.response?.data || error.message || '').toString().slice(0, 100),
+        }
+      }
+    }
+
+    return results
+  }
+
+  /**
+   * Get detailed sales report with maximum available fields
+   */
+  async getDetailedSalesReport(filter: OlapReportFilter): Promise<any> {
+    const token = await this.authenticate()
+
+    try {
+      // Request with all known working fields
+      const requestBody = {
+        reportType: 'SALES',
+        buildSummary: 'true',
+        groupByRowFields: [
+          'Department', 'Department.Id',
+          'DishId', 'DishName', 'DishCode', 'DishCategory', 'DishCategory.Id',
+          'DishGroup', 'DishGroup.Id',
+          'OpenTime', 'CloseTime', 'OrderNum',
+          'Cashier', 'PayTypes',
+          'Hour',
+        ],
+        groupByColFields: [],
+        aggregateFields: [
+          'DishAmountInt',
+          'DishDiscountSumInt',
+          'DishSumInt',
+        ],
+        filters: {
+          'OpenDate.Typed': {
+            filterType: 'DateRange',
+            periodType: 'CUSTOM',
+            from: filter.dateFrom,
+            to: filter.dateTo,
+            includeLow: true,
+            includeHigh: true,
+          },
+        },
+      }
+
+      const response = await axios.post(
+        `${this.config.serverUrl}/resto/api/v2/reports/olap`,
+        requestBody,
+        {
+          params: { key: token },
+          headers: { 'Content-Type': 'application/json' },
+          timeout: 30000,
+        }
+      )
+
+      return {
+        success: true,
+        rowCount: (response.data.data || response.data.rows || []).length,
+        keys: Object.keys((response.data.data || response.data.rows || [])[0] || {}),
+        sample: (response.data.data || response.data.rows || []).slice(0, 5),
+        summary: response.data.summary,
+      }
+    } catch (error: any) {
+      return {
+        success: false,
+        error: error.response?.data || error.message,
+      }
     }
   }
 

@@ -226,6 +226,31 @@ export const translations = {
       position: 'Позиция',
       qty: 'Кол-во',
       avgPrice: 'Сред. цена',
+      // Extended analytics
+      byWaiter: 'По официантам',
+      waiter: 'Официант',
+      byPaymentType: 'По типам оплаты',
+      byGuests: 'По гостям',
+      totalGuests: 'Всего гостей',
+      avgCheckPerGuest: 'Ср. чек на гостя',
+      guestCount: 'Кол-во гостей',
+      noGuestData: 'Нет данных о гостях',
+      serviceSpeed: 'Скорость обслуживания',
+      avgServiceTime: 'Среднее время',
+      medianServiceTime: 'Медиана',
+      minutes: 'мин',
+      // Tables
+      byTables: 'По столам',
+      table: 'Стол',
+      guests: 'Гости',
+      // Discounts
+      byDiscounts: 'По скидкам',
+      totalDiscount: 'Всего скидок',
+      discountPercent: '% от выручки',
+      discountType: 'Тип скидки',
+      // Cooking places
+      byCookingPlace: 'По местам приготовления',
+      place: 'Место',
     },
     // Common
     common: {
@@ -469,6 +494,31 @@ export const translations = {
       position: 'รายการ',
       qty: 'จำนวน',
       avgPrice: 'ราคาเฉลี่ย',
+      // Extended analytics
+      byWaiter: 'ตามพนักงานเสิร์ฟ',
+      waiter: 'พนักงานเสิร์ฟ',
+      byPaymentType: 'ตามประเภทการชำระเงิน',
+      byGuests: 'ตามแขก',
+      totalGuests: 'แขกทั้งหมด',
+      avgCheckPerGuest: 'เช็คเฉลี่ยต่อแขก',
+      guestCount: 'จำนวนแขก',
+      noGuestData: 'ไม่มีข้อมูลแขก',
+      serviceSpeed: 'ความเร็วการบริการ',
+      avgServiceTime: 'เวลาเฉลี่ย',
+      medianServiceTime: 'ค่ามัธยฐาน',
+      minutes: 'นาที',
+      // Tables
+      byTables: 'ตามโต๊ะ',
+      table: 'โต๊ะ',
+      guests: 'แขก',
+      // Discounts
+      byDiscounts: 'ตามส่วนลด',
+      totalDiscount: 'ส่วนลดรวม',
+      discountPercent: '% จากรายได้',
+      discountType: 'ประเภทส่วนลด',
+      // Cooking places
+      byCookingPlace: 'ตามจุดปรุงอาหาร',
+      place: 'จุด',
     },
     // Common
     common: {

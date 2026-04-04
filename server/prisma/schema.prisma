@@ -100,7 +100,24 @@ model IikoSale {
   departmentName  String?
   importedAt      DateTime @default(now())
 
+  // Extended fields for deep analytics (verified working with iiko Syrve)
+  waiterId        String?
+  waiterName      String?
+  paymentType     String?
+  orderType       String?
+  tableNum        String?
+  guestCount      Int?
+  closeTime       DateTime?
+  discountType    String?
+  sessionNum      String?
+  productCost     Float?              // Себестоимость (not available in OLAP)
+  cookingPlace    String?             // Kitchen place (Bar, Kitchen Hot, Pool)
+  nonCashPaymentType String?          // Non-cash payment details
+
   @@index([openTime])
   @@index([dishCategory])
   @@index([orderNum])
+  @@index([waiterId])
+  @@index([paymentType])
+  @@index([tableNum])
 }
