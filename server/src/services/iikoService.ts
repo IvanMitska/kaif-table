@@ -87,7 +87,7 @@ export class IikoService {
             login: this.config.login,
             pass: this.config.password,
           },
-          timeout: 10000,
+          timeout: 60000,
         }
       )
 
@@ -265,7 +265,7 @@ export class IikoService {
         `${this.config.serverUrl}/resto/api/corporation/departments`,
         {
           params: { key: token },
-          timeout: 10000,
+          timeout: 60000,
         }
       )
 
@@ -469,7 +469,7 @@ export class IikoService {
           {
             params: { key: token },
             headers: { 'Content-Type': 'application/json' },
-            timeout: 10000,
+            timeout: 60000,
           }
         )
 
@@ -515,7 +515,7 @@ export class IikoService {
           {
             params: { key: token },
             headers: { 'Content-Type': 'application/json' },
-            timeout: 10000,
+            timeout: 60000,
           }
         )
 
@@ -564,7 +564,7 @@ export class IikoService {
           method: endpoint.method,
           url: `${this.config.serverUrl}${endpoint.url}`,
           params: { key: token },
-          timeout: 10000,
+          timeout: 60000,
         })
 
         const data = response.data
