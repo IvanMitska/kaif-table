@@ -162,6 +162,7 @@ export class IikoService {
           'DishAmountInt',
           'DishDiscountSumInt',
           'DishSumInt',
+          'DiscountSum',  // Real discount amount
         ],
         filters: {
           'OpenDate.Typed': {
@@ -304,10 +305,12 @@ export class IikoService {
 
     for (const row of rows) {
       // In iiko Syrve OLAP API:
+      // DishSumInt = base price (before discounts)
+      // DiscountSum = actual discount amount
       // DishDiscountSumInt = NET amount (final price after discounts)
-      // DishSumInt = discount amount or base price (NOT the total)
-      const netAmount = parseFloat(row['DishDiscountSumInt'] || row['Sum'] || 0)
-      const discountAmount = parseFloat(row['DishSumInt'] || 0)  // This is actually discount, not gross
+      const basePrice = parseFloat(row['DishSumInt'] || 0)
+      const discountAmount = parseFloat(row['DiscountSum'] || 0)  // Real discount amount
+      const netAmount = parseFloat(row['DishDiscountSumInt'] || 0) || (basePrice - discountAmount)
 
       const item: OlapSalesItem = {
         dishId: row['DishId'] || row['Dish.Id'] || '',
