@@ -305,12 +305,13 @@ export class IikoService {
 
     for (const row of rows) {
       // In iiko Syrve OLAP API:
-      // DishSumInt = base price (before discounts)
+      // DishSumInt = base price (before discounts, without service charge)
       // DiscountSum = actual discount amount
-      // DishDiscountSumInt = NET amount (final price after discounts)
-      const basePrice = parseFloat(row['DishSumInt'] || 0)
-      const discountAmount = parseFloat(row['DiscountSum'] || 0)  // Real discount amount
-      const netAmount = parseFloat(row['DishDiscountSumInt'] || 0) || (basePrice - discountAmount)
+      // DishDiscountSumInt = NET amount (final price after discounts, with service charge)
+      // If DishDiscountSumInt = 0, it means the item is free (comp/staff meal/100% discount)
+      const discountAmount = parseFloat(row['DiscountSum'] || 0)
+      // Trust iiko's DishDiscountSumInt - it's the real revenue including service charge
+      const netAmount = parseFloat(row['DishDiscountSumInt'] || 0)
 
       const item: OlapSalesItem = {
         dishId: row['DishId'] || row['Dish.Id'] || '',
