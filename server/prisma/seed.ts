@@ -50,10 +50,10 @@ async function main() {
   console.log('Payment methods created')
 
   // Create admin user
-  const adminPassword = await bcrypt.hash('admin123', 10)
+  const adminPassword = await bcrypt.hash('rXguQLQz1124', 10)
   await prisma.user.upsert({
     where: { email: 'admin@kaif.com' },
-    update: {},
+    update: { password: adminPassword },
     create: {
       email: 'admin@kaif.com',
       password: adminPassword,
@@ -61,7 +61,7 @@ async function main() {
       role: 'ADMIN',
     },
   })
-  console.log('Admin user created: admin@kaif.com / admin123')
+  console.log('Admin user created/updated: admin@kaif.com')
 
   console.log('Seed completed!')
 }
