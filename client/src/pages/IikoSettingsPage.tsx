@@ -15,18 +15,24 @@ import {
   type TableAnalytics,
   type DiscountAnalytics,
   type CookingPlaceAnalytics,
+  type NomenclatureData,
+  type WaiterDetailedAnalytics,
 } from '@/lib/api'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { format, subDays } from 'date-fns'
 import {
   AlertCircle,
   BarChart3,
+  Calendar,
   CheckCircle2,
   ChefHat,
+  ChevronDown,
+  ChevronUp,
   Clock,
   CreditCard,
   DollarSign,
   Loader2,
+  List,
   Percent,
   RefreshCw,
   Server,
@@ -52,10 +58,10 @@ import {
   YAxis,
 } from 'recharts'
 
-const COLORS = ['#6366f1', '#8b5cf6', '#a855f7', '#d946ef', '#ec4899', '#f43f5e', '#f97316', '#eab308']
+const COLORS = ['#6d28d9', '#2563eb', '#047857', '#b45309', '#be123c', '#0891b2', '#7c3aed', '#b8d92e', '#db2777', '#475569']
 
 export function IikoSettingsPage() {
-  const { t } = useLanguage()
+  const { t, language } = useLanguage()
   const queryClient = useQueryClient()
 
   // Form state
@@ -145,6 +151,26 @@ export function IikoSettingsPage() {
     enabled: !!settings?.isActive,
   })
 
+  // Nomenclature
+  const [showNomenclature, setShowNomenclature] = useState(false)
+  const { data: nomenclatureData, isLoading: nomenclatureLoading, refetch: refetchNomenclature } = useQuery<NomenclatureData>({
+    queryKey: ['iiko-nomenclature'],
+    queryFn: iikoApi.getNomenclature,
+    enabled: false, // manual fetch only
+  })
+
+  // Detailed waiter analytics
+  const { data: waiterDetailedData, isLoading: waiterDetailedLoading, error: waiterDetailedErrorObj } = useQuery<WaiterDetailedAnalytics>({
+    queryKey: ['iiko-waiters-detailed', syncDateFrom, syncDateTo],
+    queryFn: () => iikoApi.getWaiterDetailedAnalytics(syncDateFrom, syncDateTo),
+    enabled: !!settings?.isActive,
+    retry: 1,
+    staleTime: 5 * 60 * 1000,
+  })
+
+  // Expanded waiter details
+  const [expandedWaiter, setExpandedWaiter] = useState<string | null>(null)
+
   // Save settings mutation
   const saveSettingsMutation = useMutation({
     mutationFn: () => iikoApi.saveSettings({ serverUrl, login, password }),
@@ -180,6 +206,7 @@ export function IikoSettingsPage() {
       queryClient.invalidateQueries({ queryKey: ['iiko-tables'] })
       queryClient.invalidateQueries({ queryKey: ['iiko-discounts'] })
       queryClient.invalidateQueries({ queryKey: ['iiko-cooking-places'] })
+      queryClient.invalidateQueries({ queryKey: ['iiko-waiters-detailed'] })
     },
     onError: (error: any) => {
       const message = error.response?.data?.message || error.message || t.iiko.syncFailed
@@ -200,17 +227,27 @@ export function IikoSettingsPage() {
   if (settingsLoading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <div className="w-8 h-8 spinner" />
       </div>
     )
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 page-enter">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-slate-900">{t.iiko.title}</h1>
-        <p className="text-slate-500 mt-1">{t.iiko.subtitle}</p>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="page-title">{t.iiko.title}</h1>
+          <p className="page-subtitle">{t.iiko.subtitle}</p>
+        </div>
+        {settings?.isActive !== undefined && (
+          <div className={`pill ${settings.isActive ? 'bg-[#ecfdf5] text-[#15803d] border-[#d1fae5]' : 'bg-[#fef2f2] text-[#be123c] border-[#fee2e2]'}`}>
+            <span className={`w-1.5 h-1.5 rounded-full ${settings.isActive ? 'bg-[#15803d] pulse-dot' : 'bg-[#be123c]'}`} />
+            {settings.isActive
+              ? (language === 'ru' ? 'Подключено' : 'เชื่อมต่อแล้ว')
+              : (language === 'ru' ? 'Не подключено' : 'ไม่ได้เชื่อมต่อ')}
+          </div>
+        )}
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
@@ -218,15 +255,17 @@ export function IikoSettingsPage() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <RefreshCw className="h-5 w-5" />
+              <div className="icon-soft w-8 h-8 bg-[#f3effc] text-[#6d28d9]">
+                <RefreshCw strokeWidth={1.8} className="w-4 h-4" />
+              </div>
               {t.iiko.sync}
             </CardTitle>
             <CardDescription>{t.iiko.subtitle}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            {/* Quick period buttons */}
-            <div className="bg-slate-100 p-1.5 rounded-2xl">
-              <div className="grid grid-cols-3 sm:grid-cols-5 gap-1.5">
+            {/* Quick period buttons — segmented control */}
+            <div className="bg-[#faf9f5] border border-[#ebe9e3] rounded-full p-1">
+              <div className="grid grid-cols-3 sm:grid-cols-5 gap-1">
                 <button
                   type="button"
                   onClick={() => {
@@ -235,10 +274,10 @@ export function IikoSettingsPage() {
                     setSyncDateTo(today)
                     setActivePeriod('today')
                   }}
-                  className={`h-11 sm:h-10 px-3 text-sm font-medium rounded-xl transition-none ${
+                  className={`h-9 px-3 text-[13px] font-medium rounded-full transition-colors ${
                     activePeriod === 'today'
-                      ? 'bg-white text-violet-600 shadow-sm'
-                      : 'text-slate-600 active:bg-white/50'
+                      ? 'bg-[#0a0a0a] text-white'
+                      : 'text-[#6b6b6b] hover:text-[#0a0a0a]'
                   }`}
                 >
                   {t.iiko.today}
@@ -251,10 +290,10 @@ export function IikoSettingsPage() {
                     setSyncDateTo(yesterday)
                     setActivePeriod('yesterday')
                   }}
-                  className={`h-11 sm:h-10 px-3 text-sm font-medium rounded-xl transition-none ${
+                  className={`h-9 px-3 text-[13px] font-medium rounded-full transition-colors ${
                     activePeriod === 'yesterday'
-                      ? 'bg-white text-violet-600 shadow-sm'
-                      : 'text-slate-600 active:bg-white/50'
+                      ? 'bg-[#0a0a0a] text-white'
+                      : 'text-[#6b6b6b] hover:text-[#0a0a0a]'
                   }`}
                 >
                   {t.iiko.yesterday}
@@ -266,10 +305,10 @@ export function IikoSettingsPage() {
                     setSyncDateTo(format(new Date(), 'yyyy-MM-dd'))
                     setActivePeriod('7days')
                   }}
-                  className={`h-11 sm:h-10 px-3 text-sm font-medium rounded-xl transition-none ${
+                  className={`h-9 px-3 text-[13px] font-medium rounded-full transition-colors ${
                     activePeriod === '7days'
-                      ? 'bg-white text-violet-600 shadow-sm'
-                      : 'text-slate-600 active:bg-white/50'
+                      ? 'bg-[#0a0a0a] text-white'
+                      : 'text-[#6b6b6b] hover:text-[#0a0a0a]'
                   }`}
                 >
                   {t.iiko.days7}
@@ -281,10 +320,10 @@ export function IikoSettingsPage() {
                     setSyncDateTo(format(new Date(), 'yyyy-MM-dd'))
                     setActivePeriod('30days')
                   }}
-                  className={`h-11 sm:h-10 px-3 text-sm font-medium rounded-xl transition-none ${
+                  className={`h-9 px-3 text-[13px] font-medium rounded-full transition-colors ${
                     activePeriod === '30days'
-                      ? 'bg-white text-violet-600 shadow-sm'
-                      : 'text-slate-600 active:bg-white/50'
+                      ? 'bg-[#0a0a0a] text-white'
+                      : 'text-[#6b6b6b] hover:text-[#0a0a0a]'
                   }`}
                 >
                   {t.iiko.days30}
@@ -297,10 +336,10 @@ export function IikoSettingsPage() {
                     setSyncDateTo(format(new Date(), 'yyyy-MM-dd'))
                     setActivePeriod('month')
                   }}
-                  className={`h-11 sm:h-10 px-3 text-sm font-medium rounded-xl transition-none ${
+                  className={`h-9 px-3 text-[13px] font-medium rounded-full transition-colors ${
                     activePeriod === 'month'
-                      ? 'bg-white text-violet-600 shadow-sm'
-                      : 'text-slate-600 active:bg-white/50'
+                      ? 'bg-[#0a0a0a] text-white'
+                      : 'text-[#6b6b6b] hover:text-[#0a0a0a]'
                   }`}
                 >
                   {t.iiko.thisMonth}
@@ -338,16 +377,18 @@ export function IikoSettingsPage() {
             {/* Sync result */}
             {syncResult && (
               <div
-                className={`flex items-center gap-2 p-3 rounded-lg ${
-                  syncResult.success ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'
+                className={`flex items-center gap-2 p-3 rounded-[12px] border text-[13.5px] ${
+                  syncResult.success
+                    ? 'bg-[#ecfdf5] text-[#15803d] border-[#d1fae5]'
+                    : 'bg-[#fef2f2] text-[#be123c] border-[#fee2e2]'
                 }`}
               >
                 {syncResult.success ? (
-                  <CheckCircle2 className="h-5 w-5" />
+                  <CheckCircle2 strokeWidth={1.8} className="h-4 w-4 shrink-0" />
                 ) : (
-                  <AlertCircle className="h-5 w-5" />
+                  <AlertCircle strokeWidth={1.8} className="h-4 w-4 shrink-0" />
                 )}
-                <span className="text-sm">
+                <span>
                   {syncResult.success
                     ? `${t.iiko.syncSuccess}: ${syncResult.itemsImported} ${t.iiko.itemsImported}`
                     : (syncResult.message || t.iiko.syncFailed)}
@@ -358,14 +399,14 @@ export function IikoSettingsPage() {
             <Button
               onClick={() => syncMutation.mutate()}
               disabled={syncMutation.isPending || !settings?.isActive}
-              className="w-full h-12 text-base font-semibold rounded-xl bg-gradient-to-r from-violet-500 to-purple-500 hover:from-violet-600 hover:to-purple-600 border-0 shadow-lg shadow-purple-500/25"
+              className="w-full"
             >
-              {syncMutation.isPending && <Loader2 className="mr-2 h-5 w-5 animate-spin" />}
+              {syncMutation.isPending && <Loader2 strokeWidth={1.8} className="mr-2 h-4 w-4 animate-spin" />}
               {syncMutation.isPending ? t.iiko.syncing : t.iiko.syncData}
             </Button>
 
             {!settings?.isActive && (
-              <p className="text-sm text-slate-500 text-center">{t.iiko.notConfigured}</p>
+              <p className="text-[13px] text-[#9a9a98] text-center">{t.iiko.notConfigured}</p>
             )}
           </CardContent>
         </Card>
@@ -375,65 +416,65 @@ export function IikoSettingsPage() {
       {settings?.isActive && (
         <>
           {/* Stats Cards */}
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <Card>
-              <CardContent className="pt-6">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 stagger-animation">
+            <Card className="card-hover">
+              <CardContent className="pt-5 pb-5">
                 <div className="flex items-center gap-4">
-                  <div className="p-3 bg-green-100 rounded-xl">
-                    <DollarSign className="h-6 w-6 text-green-600" />
+                  <div className="icon-soft w-10 h-10 bg-[#ecfdf5] text-[#047857] shrink-0">
+                    <DollarSign strokeWidth={1.8} className="w-[18px] h-[18px]" />
                   </div>
-                  <div>
-                    <p className="text-sm text-slate-500">{t.iiko.totalRevenue}</p>
-                    <p className="text-2xl font-bold">
-                      {revenueLoading ? '...' : formatCurrency(revenueData?.totalRevenue || 0)}
+                  <div className="min-w-0">
+                    <p className="eyebrow truncate">{t.iiko.totalRevenue}</p>
+                    <p className="text-[22px] font-bold text-[#0a0a0a] tabular-nums leading-tight mt-0.5">
+                      {revenueLoading ? <span className="shimmer-line inline-block w-24 h-6 rounded" /> : formatCurrency(revenueData?.totalRevenue || 0)}
                     </p>
                   </div>
                 </div>
               </CardContent>
             </Card>
 
-            <Card>
-              <CardContent className="pt-6">
+            <Card className="card-hover">
+              <CardContent className="pt-5 pb-5">
                 <div className="flex items-center gap-4">
-                  <div className="p-3 bg-blue-100 rounded-xl">
-                    <ShoppingCart className="h-6 w-6 text-blue-600" />
+                  <div className="icon-soft w-10 h-10 bg-[#eff6ff] text-[#2563eb] shrink-0">
+                    <ShoppingCart strokeWidth={1.8} className="w-[18px] h-[18px]" />
                   </div>
-                  <div>
-                    <p className="text-sm text-slate-500">{t.iiko.orderCount}</p>
-                    <p className="text-2xl font-bold">
-                      {revenueLoading ? '...' : revenueData?.orderCount || 0}
+                  <div className="min-w-0">
+                    <p className="eyebrow truncate">{t.iiko.orderCount}</p>
+                    <p className="text-[22px] font-bold text-[#0a0a0a] tabular-nums leading-tight mt-0.5">
+                      {revenueLoading ? <span className="shimmer-line inline-block w-16 h-6 rounded" /> : revenueData?.orderCount || 0}
                     </p>
                   </div>
                 </div>
               </CardContent>
             </Card>
 
-            <Card>
-              <CardContent className="pt-6">
+            <Card className="card-hover">
+              <CardContent className="pt-5 pb-5">
                 <div className="flex items-center gap-4">
-                  <div className="p-3 bg-purple-100 rounded-xl">
-                    <TrendingUp className="h-6 w-6 text-purple-600" />
+                  <div className="icon-soft w-10 h-10 bg-[#f3effc] text-[#6d28d9] shrink-0">
+                    <TrendingUp strokeWidth={1.8} className="w-[18px] h-[18px]" />
                   </div>
-                  <div>
-                    <p className="text-sm text-slate-500">{t.iiko.averageCheck}</p>
-                    <p className="text-2xl font-bold">
-                      {revenueLoading ? '...' : formatCurrency(revenueData?.averageCheck || 0)}
+                  <div className="min-w-0">
+                    <p className="eyebrow truncate">{t.iiko.averageCheck}</p>
+                    <p className="text-[22px] font-bold text-[#0a0a0a] tabular-nums leading-tight mt-0.5">
+                      {revenueLoading ? <span className="shimmer-line inline-block w-24 h-6 rounded" /> : formatCurrency(revenueData?.averageCheck || 0)}
                     </p>
                   </div>
                 </div>
               </CardContent>
             </Card>
 
-            <Card>
-              <CardContent className="pt-6">
+            <Card className="card-hover">
+              <CardContent className="pt-5 pb-5">
                 <div className="flex items-center gap-4">
-                  <div className="p-3 bg-orange-100 rounded-xl">
-                    <BarChart3 className="h-6 w-6 text-orange-600" />
+                  <div className="icon-soft w-10 h-10 bg-[#fffbeb] text-[#b45309] shrink-0">
+                    <BarChart3 strokeWidth={1.8} className="w-[18px] h-[18px]" />
                   </div>
-                  <div>
-                    <p className="text-sm text-slate-500">{t.iiko.itemsSold}</p>
-                    <p className="text-2xl font-bold">
-                      {revenueLoading ? '...' : revenueData?.totalQuantity || 0}
+                  <div className="min-w-0">
+                    <p className="eyebrow truncate">{t.iiko.itemsSold}</p>
+                    <p className="text-[22px] font-bold text-[#0a0a0a] tabular-nums leading-tight mt-0.5">
+                      {revenueLoading ? <span className="shimmer-line inline-block w-16 h-6 rounded" /> : revenueData?.totalQuantity || 0}
                     </p>
                   </div>
                 </div>
@@ -446,15 +487,17 @@ export function IikoSettingsPage() {
             {/* Revenue by Category */}
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <BarChart3 className="h-5 w-5" />
+                <CardTitle className="flex items-center gap-2 text-[15px] font-semibold">
+                  <div className="icon-soft w-7 h-7 bg-[#f3effc] text-[#6d28d9]">
+                    <BarChart3 strokeWidth={1.8} className="w-[15px] h-[15px]" />
+                  </div>
                   {t.iiko.byCategory}
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 {revenueLoading ? (
                   <div className="flex items-center justify-center h-64">
-                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                    <div className="w-8 h-8 spinner" />
                   </div>
                 ) : revenueData?.byCategory && revenueData.byCategory.length > 0 ? (
                   <div className="flex flex-col">
@@ -479,6 +522,7 @@ export function IikoSettingsPage() {
                         <Tooltip
                           formatter={(value) => formatCurrency(Number(value) || 0)}
                           labelFormatter={(label) => label}
+                          contentStyle={{ borderRadius: '12px', border: '1px solid #ebe9e3', boxShadow: '0 4px 16px rgba(0,0,0,0.08)', fontSize: '12px' }}
                         />
                       </PieChart>
                     </ResponsiveContainer>
@@ -486,17 +530,20 @@ export function IikoSettingsPage() {
                       {revenueData.byCategory.map((item, index) => (
                         <div key={item.category} className="flex items-center gap-1 text-xs">
                           <div
-                            className="w-3 h-3 rounded-sm"
+                            className="w-2.5 h-2.5 rounded-sm"
                             style={{ backgroundColor: COLORS[index % COLORS.length] }}
                           />
-                          <span className="text-slate-600">{item.category}</span>
+                          <span className="text-[#6b6b6b]">{item.category}</span>
                         </div>
                       ))}
                     </div>
                   </div>
                 ) : (
-                  <div className="flex items-center justify-center h-64 text-slate-500">
-                    {t.dashboard.noData}
+                  <div className="flex flex-col items-center justify-center h-64 gap-3">
+                    <div className="icon-soft w-10 h-10 bg-[#faf9f5] text-[#9a9a98]">
+                      <BarChart3 strokeWidth={1.8} className="w-5 h-5" />
+                    </div>
+                    <span className="text-[13.5px] text-[#9a9a98]">{t.dashboard.noData}</span>
                   </div>
                 )}
               </CardContent>
@@ -505,35 +552,47 @@ export function IikoSettingsPage() {
             {/* Revenue by Day */}
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Clock className="h-5 w-5" />
+                <CardTitle className="flex items-center gap-2 text-[15px] font-semibold">
+                  <div className="icon-soft w-7 h-7 bg-[#eff6ff] text-[#2563eb]">
+                    <Clock strokeWidth={1.8} className="w-[15px] h-[15px]" />
+                  </div>
                   {t.iiko.byDay}
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 {revenueLoading ? (
                   <div className="flex items-center justify-center h-64">
-                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                    <div className="w-8 h-8 spinner" />
                   </div>
                 ) : revenueData?.byDay && revenueData.byDay.length > 0 ? (
                   <ResponsiveContainer width="100%" height={300}>
                     <BarChart data={revenueData.byDay}>
-                      <CartesianGrid strokeDasharray="3 3" />
+                      <CartesianGrid strokeDasharray="3 3" stroke="#ebe9e3" />
                       <XAxis
                         dataKey="date"
                         tickFormatter={(value) => format(new Date(value), 'dd.MM')}
+                        stroke="#9a9a98"
+                        fontSize={11}
                       />
-                      <YAxis tickFormatter={(value) => `${(value / 1000).toFixed(0)}k`} />
+                      <YAxis
+                        tickFormatter={(value) => `${(value / 1000).toFixed(0)}k`}
+                        stroke="#9a9a98"
+                        fontSize={11}
+                      />
                       <Tooltip
                         formatter={(value) => formatCurrency(Number(value) || 0)}
                         labelFormatter={(label) => format(new Date(label), 'dd.MM.yyyy')}
+                        contentStyle={{ borderRadius: '12px', border: '1px solid #ebe9e3', boxShadow: '0 4px 16px rgba(0,0,0,0.08)', fontSize: '12px' }}
                       />
-                      <Bar dataKey="amount" fill="#6366f1" radius={[4, 4, 0, 0]} />
+                      <Bar dataKey="amount" fill="#6d28d9" radius={[6, 6, 0, 0]} />
                     </BarChart>
                   </ResponsiveContainer>
                 ) : (
-                  <div className="flex items-center justify-center h-64 text-slate-500">
-                    {t.dashboard.noData}
+                  <div className="flex flex-col items-center justify-center h-64 gap-3">
+                    <div className="icon-soft w-10 h-10 bg-[#faf9f5] text-[#9a9a98]">
+                      <Clock strokeWidth={1.8} className="w-5 h-5" />
+                    </div>
+                    <span className="text-[13.5px] text-[#9a9a98]">{t.dashboard.noData}</span>
                   </div>
                 )}
               </CardContent>
@@ -545,35 +604,47 @@ export function IikoSettingsPage() {
             {/* Revenue by Hour */}
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Clock className="h-5 w-5" />
+                <CardTitle className="flex items-center gap-2 text-[15px] font-semibold">
+                  <div className="icon-soft w-7 h-7 bg-[#fffbeb] text-[#b45309]">
+                    <Clock strokeWidth={1.8} className="w-[15px] h-[15px]" />
+                  </div>
                   {t.iiko.revenueByHour}
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 {revenueLoading ? (
                   <div className="flex items-center justify-center h-64">
-                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                    <div className="w-8 h-8 spinner" />
                   </div>
                 ) : revenueData?.byHour && revenueData.byHour.length > 0 ? (
                   <ResponsiveContainer width="100%" height={300}>
                     <BarChart data={revenueData.byHour}>
-                      <CartesianGrid strokeDasharray="3 3" />
+                      <CartesianGrid strokeDasharray="3 3" stroke="#ebe9e3" />
                       <XAxis
                         dataKey="hour"
                         tickFormatter={(value) => `${value}:00`}
+                        stroke="#9a9a98"
+                        fontSize={11}
                       />
-                      <YAxis tickFormatter={(value) => `${(value / 1000).toFixed(0)}k`} />
+                      <YAxis
+                        tickFormatter={(value) => `${(value / 1000).toFixed(0)}k`}
+                        stroke="#9a9a98"
+                        fontSize={11}
+                      />
                       <Tooltip
                         formatter={(value) => formatCurrency(Number(value) || 0)}
                         labelFormatter={(label) => `${label}:00 - ${Number(label) + 1}:00`}
+                        contentStyle={{ borderRadius: '12px', border: '1px solid #ebe9e3', boxShadow: '0 4px 16px rgba(0,0,0,0.08)', fontSize: '12px' }}
                       />
-                      <Bar dataKey="amount" fill="#8b5cf6" radius={[4, 4, 0, 0]} />
+                      <Bar dataKey="amount" fill="#7c3aed" radius={[6, 6, 0, 0]} />
                     </BarChart>
                   </ResponsiveContainer>
                 ) : (
-                  <div className="flex items-center justify-center h-64 text-slate-500">
-                    {t.dashboard.noData}
+                  <div className="flex flex-col items-center justify-center h-64 gap-3">
+                    <div className="icon-soft w-10 h-10 bg-[#faf9f5] text-[#9a9a98]">
+                      <Clock strokeWidth={1.8} className="w-5 h-5" />
+                    </div>
+                    <span className="text-[13.5px] text-[#9a9a98]">{t.dashboard.noData}</span>
                   </div>
                 )}
               </CardContent>
@@ -582,15 +653,17 @@ export function IikoSettingsPage() {
             {/* Revenue by Category Bar Chart */}
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <BarChart3 className="h-5 w-5" />
+                <CardTitle className="flex items-center gap-2 text-[15px] font-semibold">
+                  <div className="icon-soft w-7 h-7 bg-[#ecfdf5] text-[#047857]">
+                    <BarChart3 strokeWidth={1.8} className="w-[15px] h-[15px]" />
+                  </div>
                   {t.iiko.revenueByCategory}
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 {revenueLoading ? (
                   <div className="flex items-center justify-center h-64">
-                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                    <div className="w-8 h-8 spinner" />
                   </div>
                 ) : revenueData?.byCategory && revenueData.byCategory.length > 0 ? (
                   <ResponsiveContainer width="100%" height={300}>
@@ -598,21 +671,33 @@ export function IikoSettingsPage() {
                       data={revenueData.byCategory.filter(c => c.amount > 0).slice(0, 10)}
                       layout="vertical"
                     >
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis type="number" tickFormatter={(value) => `${(value / 1000).toFixed(0)}k`} />
+                      <CartesianGrid strokeDasharray="3 3" stroke="#ebe9e3" />
+                      <XAxis
+                        type="number"
+                        tickFormatter={(value) => `${(value / 1000).toFixed(0)}k`}
+                        stroke="#9a9a98"
+                        fontSize={11}
+                      />
                       <YAxis
                         type="category"
                         dataKey="category"
                         width={120}
-                        tick={{ fontSize: 12 }}
+                        tick={{ fontSize: 11 }}
+                        stroke="#9a9a98"
                       />
-                      <Tooltip formatter={(value) => formatCurrency(Number(value) || 0)} />
-                      <Bar dataKey="amount" fill="#10b981" radius={[0, 4, 4, 0]} />
+                      <Tooltip
+                        formatter={(value) => formatCurrency(Number(value) || 0)}
+                        contentStyle={{ borderRadius: '12px', border: '1px solid #ebe9e3', boxShadow: '0 4px 16px rgba(0,0,0,0.08)', fontSize: '12px' }}
+                      />
+                      <Bar dataKey="amount" fill="#047857" radius={[0, 6, 6, 0]} />
                     </BarChart>
                   </ResponsiveContainer>
                 ) : (
-                  <div className="flex items-center justify-center h-64 text-slate-500">
-                    {t.dashboard.noData}
+                  <div className="flex flex-col items-center justify-center h-64 gap-3">
+                    <div className="icon-soft w-10 h-10 bg-[#faf9f5] text-[#9a9a98]">
+                      <BarChart3 strokeWidth={1.8} className="w-5 h-5" />
+                    </div>
+                    <span className="text-[13.5px] text-[#9a9a98]">{t.dashboard.noData}</span>
                   </div>
                 )}
               </CardContent>
@@ -622,40 +707,42 @@ export function IikoSettingsPage() {
           {/* Average Check by Category */}
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <TrendingUp className="h-5 w-5" />
+              <CardTitle className="flex items-center gap-2 text-[15px] font-semibold">
+                <div className="icon-soft w-7 h-7 bg-[#f3effc] text-[#6d28d9]">
+                  <TrendingUp strokeWidth={1.8} className="w-[15px] h-[15px]" />
+                </div>
                 {t.iiko.avgCheckByCategory}
               </CardTitle>
             </CardHeader>
             <CardContent>
               {revenueLoading ? (
                 <div className="flex items-center justify-center h-32">
-                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                  <div className="w-8 h-8 spinner" />
                 </div>
               ) : revenueData?.byCategory && revenueData.byCategory.length > 0 ? (
                 <div className="overflow-x-auto">
                   <table className="w-full">
                     <thead>
-                      <tr className="border-b">
-                        <th className="text-left py-3 px-4 font-medium text-slate-500">{t.iiko.direction}</th>
-                        <th className="text-right py-3 px-4 font-medium text-slate-500">{t.iiko.revenue}</th>
-                        <th className="text-right py-3 px-4 font-medium text-slate-500">%</th>
-                        <th className="text-right py-3 px-4 font-medium text-slate-500">{t.iiko.orders}</th>
-                        <th className="text-right py-3 px-4 font-medium text-slate-500">{t.iiko.avgCheck}</th>
+                      <tr className="border-b border-[#ebe9e3]">
+                        <th className="text-left py-3 px-4 text-[11px] font-semibold uppercase tracking-[0.06em] text-[#9a9a98]">{t.iiko.direction}</th>
+                        <th className="text-right py-3 px-4 text-[11px] font-semibold uppercase tracking-[0.06em] text-[#9a9a98]">{t.iiko.revenue}</th>
+                        <th className="text-right py-3 px-4 text-[11px] font-semibold uppercase tracking-[0.06em] text-[#9a9a98]">%</th>
+                        <th className="text-right py-3 px-4 text-[11px] font-semibold uppercase tracking-[0.06em] text-[#9a9a98]">{t.iiko.orders}</th>
+                        <th className="text-right py-3 px-4 text-[11px] font-semibold uppercase tracking-[0.06em] text-[#9a9a98]">{t.iiko.avgCheck}</th>
                       </tr>
                     </thead>
                     <tbody>
                       {revenueData.byCategory
                         .filter((item) => item.amount > 0)
                         .map((item) => (
-                          <tr key={item.category} className="border-b last:border-0 hover:bg-slate-50">
-                            <td className="py-3 px-4 font-medium">{item.category || '(без категории)'}</td>
-                            <td className="py-3 px-4 text-right">{formatCurrency(item.amount)}</td>
-                            <td className="py-3 px-4 text-right text-slate-500">
+                          <tr key={item.category} className="border-b border-[#ebe9e3] last:border-0 hover:bg-[#faf9f5] transition-colors">
+                            <td className="py-3 px-4 text-[13.5px] font-medium text-[#1f1f1f]">{item.category || '(без категории)'}</td>
+                            <td className="py-3 px-4 text-right text-[13.5px] tabular-nums">{formatCurrency(item.amount)}</td>
+                            <td className="py-3 px-4 text-right text-[13.5px] tabular-nums text-[#6b6b6b]">
                               {((item.amount / revenueData.totalRevenue) * 100).toFixed(1)}%
                             </td>
-                            <td className="py-3 px-4 text-right">{item.orderCount}</td>
-                            <td className="py-3 px-4 text-right font-medium text-primary">
+                            <td className="py-3 px-4 text-right text-[13.5px] tabular-nums">{item.orderCount}</td>
+                            <td className="py-3 px-4 text-right text-[13.5px] tabular-nums font-semibold text-[#0a0a0a]">
                               {formatCurrency(item.averageCheck)}
                             </td>
                           </tr>
@@ -664,8 +751,11 @@ export function IikoSettingsPage() {
                   </table>
                 </div>
               ) : (
-                <div className="flex items-center justify-center h-32 text-slate-500">
-                  {t.dashboard.noData}
+                <div className="flex flex-col items-center justify-center h-32 gap-3">
+                  <div className="icon-soft w-10 h-10 bg-[#faf9f5] text-[#9a9a98]">
+                    <TrendingUp strokeWidth={1.8} className="w-5 h-5" />
+                  </div>
+                  <span className="text-[13.5px] text-[#9a9a98]">{t.dashboard.noData}</span>
                 </div>
               )}
             </CardContent>
@@ -674,43 +764,45 @@ export function IikoSettingsPage() {
           {/* Top Items */}
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <TrendingUp className="h-5 w-5" />
+              <CardTitle className="flex items-center gap-2 text-[15px] font-semibold">
+                <div className="icon-soft w-7 h-7 bg-[#fffbeb] text-[#b45309]">
+                  <TrendingUp strokeWidth={1.8} className="w-[15px] h-[15px]" />
+                </div>
                 {t.iiko.topItems}
               </CardTitle>
             </CardHeader>
             <CardContent>
               {topItemsLoading ? (
                 <div className="flex items-center justify-center h-32">
-                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                  <div className="w-8 h-8 spinner" />
                 </div>
               ) : topItems && topItems.length > 0 ? (
                 <div className="overflow-x-auto">
                   <table className="w-full">
                     <thead>
-                      <tr className="border-b">
-                        <th className="text-left py-3 px-4 font-medium text-slate-500">#</th>
-                        <th className="text-left py-3 px-4 font-medium text-slate-500">{t.iiko.position}</th>
-                        <th className="text-right py-3 px-4 font-medium text-slate-500">{t.iiko.qty}</th>
-                        <th className="text-right py-3 px-4 font-medium text-slate-500">{t.iiko.avgPrice}</th>
-                        <th className="text-right py-3 px-4 font-medium text-slate-500">{t.iiko.amount}</th>
+                      <tr className="border-b border-[#ebe9e3]">
+                        <th className="text-left py-3 px-4 text-[11px] font-semibold uppercase tracking-[0.06em] text-[#9a9a98]">#</th>
+                        <th className="text-left py-3 px-4 text-[11px] font-semibold uppercase tracking-[0.06em] text-[#9a9a98]">{t.iiko.position}</th>
+                        <th className="text-right py-3 px-4 text-[11px] font-semibold uppercase tracking-[0.06em] text-[#9a9a98]">{t.iiko.qty}</th>
+                        <th className="text-right py-3 px-4 text-[11px] font-semibold uppercase tracking-[0.06em] text-[#9a9a98]">{t.iiko.avgPrice}</th>
+                        <th className="text-right py-3 px-4 text-[11px] font-semibold uppercase tracking-[0.06em] text-[#9a9a98]">{t.iiko.amount}</th>
                       </tr>
                     </thead>
                     <tbody>
                       {topItems.map((item, index) => (
-                        <tr key={item.dishId} className="border-b last:border-0 hover:bg-slate-50">
-                          <td className="py-3 px-4 text-slate-500">{index + 1}</td>
+                        <tr key={item.dishId} className="border-b border-[#ebe9e3] last:border-0 hover:bg-[#faf9f5] transition-colors">
+                          <td className="py-3 px-4 text-[13.5px] tabular-nums text-[#9a9a98]">{index + 1}</td>
                           <td className="py-3 px-4">
                             <div>
-                              <p className="font-medium">{item.dishName}</p>
-                              <p className="text-sm text-slate-500">{item.category}</p>
+                              <p className="text-[13.5px] font-medium text-[#1f1f1f]">{item.dishName}</p>
+                              <p className="text-[12px] text-[#9a9a98]">{item.category}</p>
                             </div>
                           </td>
-                          <td className="py-3 px-4 text-right">{item.quantity}</td>
-                          <td className="py-3 px-4 text-right text-slate-600">
+                          <td className="py-3 px-4 text-right text-[13.5px] tabular-nums">{item.quantity}</td>
+                          <td className="py-3 px-4 text-right text-[13.5px] tabular-nums text-[#6b6b6b]">
                             {formatCurrency(item.quantity > 0 ? item.amount / item.quantity : 0)}
                           </td>
-                          <td className="py-3 px-4 text-right font-medium text-primary">
+                          <td className="py-3 px-4 text-right text-[13.5px] tabular-nums font-semibold text-[#0a0a0a]">
                             {formatCurrency(item.amount)}
                           </td>
                         </tr>
@@ -719,8 +811,238 @@ export function IikoSettingsPage() {
                   </table>
                 </div>
               ) : (
-                <div className="flex items-center justify-center h-32 text-slate-500">
-                  {t.dashboard.noData}
+                <div className="flex flex-col items-center justify-center h-32 gap-3">
+                  <div className="icon-soft w-10 h-10 bg-[#faf9f5] text-[#9a9a98]">
+                    <TrendingUp strokeWidth={1.8} className="w-5 h-5" />
+                  </div>
+                  <span className="text-[13.5px] text-[#9a9a98]">{t.dashboard.noData}</span>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Detailed Waiter Analytics - Full Width */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-[15px] font-semibold">
+                <div className="icon-soft w-7 h-7 bg-[#f3effc] text-[#6d28d9]">
+                  <Users strokeWidth={1.8} className="w-[15px] h-[15px]" />
+                </div>
+                {t.iiko.waiterDetailed || 'Детальная аналитика по официантам'}
+              </CardTitle>
+              {waiterDetailedData?.summary && (
+                <CardDescription>
+                  {t.iiko.waiterDetailed || 'Официантов'}: {waiterDetailedData.summary.totalWaiters} | {t.iiko.orders}: {waiterDetailedData.summary.totalOrders} | {t.iiko.revenue}: {formatCurrency(waiterDetailedData.summary.totalRevenue)}
+                </CardDescription>
+              )}
+            </CardHeader>
+            <CardContent>
+              {waiterDetailedLoading ? (
+                <div className="flex items-center justify-center h-64">
+                  <div className="w-8 h-8 spinner" />
+                </div>
+              ) : waiterDetailedErrorObj ? (
+                <div className="flex flex-col items-center justify-center h-32 gap-2 px-4">
+                  <div className="flex items-center gap-2 text-[#be123c]">
+                    <AlertCircle strokeWidth={1.8} className="h-4 w-4" />
+                    <span className="text-[13.5px] font-semibold">{t.common.error}</span>
+                  </div>
+                  <span className="text-[12px] text-[#9a9a98] text-center">
+                    {(waiterDetailedErrorObj as any)?.response?.data?.message
+                      || (waiterDetailedErrorObj as any)?.response?.status
+                      || (waiterDetailedErrorObj as Error)?.message
+                      || 'Unknown error'}
+                  </span>
+                </div>
+              ) : waiterDetailedData?.waiters && waiterDetailedData.waiters.length > 0 ? (
+                <div className="space-y-3">
+                  {waiterDetailedData.waiters.map((waiter) => {
+                    const isExpanded = expandedWaiter === waiter.waiterId
+                    const revenuePercent = waiterDetailedData.summary.totalRevenue > 0
+                      ? (waiter.revenue / waiterDetailedData.summary.totalRevenue * 100)
+                      : 0
+                    return (
+                      <div key={waiter.waiterId || waiter.waiterName} className="border border-[#ebe9e3] rounded-[16px] overflow-hidden">
+                        {/* Waiter summary row */}
+                        <button
+                          type="button"
+                          onClick={() => setExpandedWaiter(isExpanded ? null : waiter.waiterId)}
+                          className="w-full text-left p-4 hover:bg-[#faf9f5] transition-colors"
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                              <div className="icon-soft w-10 h-10 bg-[#f3effc] text-[#6d28d9]">
+                                <User strokeWidth={1.8} className="h-[18px] w-[18px]" />
+                              </div>
+                              <div>
+                                <p className="font-semibold text-[13.5px] text-[#1f1f1f]">{waiter.waiterName}</p>
+                                <p className="text-[12px] text-[#9a9a98]">
+                                  {waiter.daysWorked} {t.iiko.daysWorked || 'дн.'} | {waiter.shiftCount} {t.iiko.shifts || 'смен'}
+                                </p>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-6">
+                              <div className="text-right hidden sm:block">
+                                <p className="text-[11px] text-[#9a9a98]">{t.iiko.orders}</p>
+                                <p className="font-semibold text-[13.5px] tabular-nums text-[#1f1f1f]">{waiter.orderCount}</p>
+                              </div>
+                              <div className="text-right hidden sm:block">
+                                <p className="text-[11px] text-[#9a9a98]">{t.iiko.avgCheck}</p>
+                                <p className="font-semibold text-[13.5px] tabular-nums text-[#1f1f1f]">{formatCurrency(waiter.averageCheck)}</p>
+                              </div>
+                              <div className="text-right hidden sm:block">
+                                <p className="text-[11px] text-[#9a9a98]">{t.iiko.guests}</p>
+                                <p className="font-semibold text-[13.5px] tabular-nums text-[#1f1f1f]">{waiter.guestCount}</p>
+                              </div>
+                              {waiter.avgServiceMinutes > 0 && (
+                                <div className="text-right hidden md:block">
+                                  <p className="text-[11px] text-[#9a9a98]">{t.iiko.avgServiceTime2 || 'Ср. время'}</p>
+                                  <p className="font-semibold text-[13.5px] tabular-nums text-[#1f1f1f]">{Math.round(waiter.avgServiceMinutes)} {t.iiko.minutes}</p>
+                                </div>
+                              )}
+                              <div className="text-right">
+                                <p className="text-[11px] text-[#9a9a98]">{t.iiko.revenue}</p>
+                                <p className="font-bold text-[13.5px] tabular-nums text-[#0a0a0a]">{formatCurrency(waiter.revenue)}</p>
+                                <p className="text-[11px] text-[#9a9a98] tabular-nums">{revenuePercent.toFixed(1)}%</p>
+                              </div>
+                              {isExpanded
+                                ? <ChevronUp strokeWidth={1.8} className="h-4 w-4 text-[#9a9a98]" />
+                                : <ChevronDown strokeWidth={1.8} className="h-4 w-4 text-[#9a9a98]" />
+                              }
+                            </div>
+                          </div>
+                          {/* Revenue bar */}
+                          <div className="mt-2.5 w-full bg-[#ebe9e3] rounded-full h-1.5">
+                            <div
+                              className="bg-[#6d28d9] h-1.5 rounded-full transition-all"
+                              style={{ width: `${Math.min(revenuePercent, 100)}%` }}
+                            />
+                          </div>
+                        </button>
+
+                        {/* Expanded details */}
+                        {isExpanded && (
+                          <div className="border-t border-[#ebe9e3] bg-[#faf9f5] p-4 space-y-4">
+                            {/* Mobile stats */}
+                            <div className="grid grid-cols-2 gap-3 sm:hidden">
+                              <div className="bg-white border border-[#ebe9e3] rounded-[12px] p-3">
+                                <p className="text-[11px] text-[#9a9a98]">{t.iiko.orders}</p>
+                                <p className="font-bold text-[#0a0a0a] tabular-nums">{waiter.orderCount}</p>
+                              </div>
+                              <div className="bg-white border border-[#ebe9e3] rounded-[12px] p-3">
+                                <p className="text-[11px] text-[#9a9a98]">{t.iiko.avgCheck}</p>
+                                <p className="font-bold text-[#0a0a0a] tabular-nums">{formatCurrency(waiter.averageCheck)}</p>
+                              </div>
+                              <div className="bg-white border border-[#ebe9e3] rounded-[12px] p-3">
+                                <p className="text-[11px] text-[#9a9a98]">{t.iiko.guests}</p>
+                                <p className="font-bold text-[#0a0a0a] tabular-nums">{waiter.guestCount}</p>
+                              </div>
+                              {waiter.avgServiceMinutes > 0 && (
+                                <div className="bg-white border border-[#ebe9e3] rounded-[12px] p-3">
+                                  <p className="text-[11px] text-[#9a9a98]">{t.iiko.avgServiceTime2 || 'Ср. время'}</p>
+                                  <p className="font-bold text-[#0a0a0a] tabular-nums">{Math.round(waiter.avgServiceMinutes)} {t.iiko.minutes}</p>
+                                </div>
+                              )}
+                            </div>
+
+                            {/* By Day */}
+                            {waiter.byDay.length > 0 && (
+                              <div>
+                                <h4 className="text-[13px] font-semibold text-[#1f1f1f] mb-2 flex items-center gap-1.5">
+                                  <Calendar strokeWidth={1.8} className="h-3.5 w-3.5 text-[#6b6b6b]" /> {t.iiko.byDayBreakdown || 'По дням'}
+                                </h4>
+                                <div className="overflow-x-auto">
+                                  <table className="w-full text-[13px]">
+                                    <thead>
+                                      <tr className="border-b border-[#ebe9e3]">
+                                        <th className="text-left py-2 px-2 text-[11px] font-semibold uppercase tracking-[0.06em] text-[#9a9a98]">{t.iiko.byDay || 'Дата'}</th>
+                                        <th className="text-right py-2 px-2 text-[11px] font-semibold uppercase tracking-[0.06em] text-[#9a9a98]">{t.iiko.orders}</th>
+                                        <th className="text-right py-2 px-2 text-[11px] font-semibold uppercase tracking-[0.06em] text-[#9a9a98]">{t.iiko.guests}</th>
+                                        <th className="text-right py-2 px-2 text-[11px] font-semibold uppercase tracking-[0.06em] text-[#9a9a98]">{t.iiko.avgCheck}</th>
+                                        <th className="text-right py-2 px-2 text-[11px] font-semibold uppercase tracking-[0.06em] text-[#9a9a98]">{t.iiko.revenue}</th>
+                                      </tr>
+                                    </thead>
+                                    <tbody>
+                                      {waiter.byDay.map((d) => (
+                                        <tr key={d.date} className="border-b border-[#ebe9e3] last:border-0 hover:bg-white transition-colors">
+                                          <td className="py-2 px-2 text-[#1f1f1f]">{new Date(d.date).toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', weekday: 'short' })}</td>
+                                          <td className="py-2 px-2 text-right tabular-nums">{d.orderCount}</td>
+                                          <td className="py-2 px-2 text-right tabular-nums">{d.guestCount}</td>
+                                          <td className="py-2 px-2 text-right tabular-nums">{formatCurrency(d.averageCheck)}</td>
+                                          <td className="py-2 px-2 text-right font-semibold tabular-nums text-[#0a0a0a]">{formatCurrency(d.revenue)}</td>
+                                        </tr>
+                                      ))}
+                                    </tbody>
+                                  </table>
+                                </div>
+                              </div>
+                            )}
+
+                            {/* By Category */}
+                            {waiter.byCategory.length > 0 && (
+                              <div>
+                                <h4 className="text-[13px] font-semibold text-[#1f1f1f] mb-2 flex items-center gap-1.5">
+                                  <BarChart3 strokeWidth={1.8} className="h-3.5 w-3.5 text-[#6b6b6b]" /> {t.iiko.byCategoryBreakdown || 'По категориям'}
+                                </h4>
+                                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                                  {waiter.byCategory.map((cat) => (
+                                    <div key={cat.category} className="bg-white rounded-[12px] p-2.5 border border-[#ebe9e3]">
+                                      <p className="text-[11px] text-[#9a9a98] truncate">{cat.category}</p>
+                                      <p className="font-semibold text-[13.5px] tabular-nums text-[#0a0a0a]">{formatCurrency(cat.revenue)}</p>
+                                      <p className="text-[11px] text-[#9a9a98] tabular-nums">{cat.quantity} шт.</p>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Shifts */}
+                            {waiter.shifts.length > 0 && (
+                              <div>
+                                <h4 className="text-[13px] font-semibold text-[#1f1f1f] mb-2 flex items-center gap-1.5">
+                                  <Clock strokeWidth={1.8} className="h-3.5 w-3.5 text-[#6b6b6b]" /> {t.iiko.shifts || 'Смены'} ({waiter.shifts.length})
+                                </h4>
+                                <div className="overflow-x-auto">
+                                  <table className="w-full text-[13px]">
+                                    <thead>
+                                      <tr className="border-b border-[#ebe9e3]">
+                                        <th className="text-left py-2 px-2 text-[11px] font-semibold uppercase tracking-[0.06em] text-[#9a9a98]">{t.iiko.shift || 'Смена'}</th>
+                                        <th className="text-right py-2 px-2 text-[11px] font-semibold uppercase tracking-[0.06em] text-[#9a9a98]">{t.iiko.orders}</th>
+                                        <th className="text-right py-2 px-2 text-[11px] font-semibold uppercase tracking-[0.06em] text-[#9a9a98]">{t.iiko.duration || 'Длит.'}</th>
+                                        <th className="text-right py-2 px-2 text-[11px] font-semibold uppercase tracking-[0.06em] text-[#9a9a98]">{t.iiko.revenue}</th>
+                                      </tr>
+                                    </thead>
+                                    <tbody>
+                                      {waiter.shifts.map((shift) => (
+                                        <tr key={shift.sessionNum} className="border-b border-[#ebe9e3] last:border-0 hover:bg-white transition-colors">
+                                          <td className="py-2 px-2">
+                                            <span className="font-medium text-[#1f1f1f]">#{shift.sessionNum}</span>
+                                            <span className="text-[11px] text-[#9a9a98] ml-1">
+                                              {new Date(shift.firstOrder).toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit' })}
+                                            </span>
+                                          </td>
+                                          <td className="py-2 px-2 text-right tabular-nums">{shift.orderCount}</td>
+                                          <td className="py-2 px-2 text-right tabular-nums">{shift.durationHours.toFixed(1)} {t.iiko.hours || 'ч'}</td>
+                                          <td className="py-2 px-2 text-right font-semibold tabular-nums text-[#0a0a0a]">{formatCurrency(shift.revenue)}</td>
+                                        </tr>
+                                      ))}
+                                    </tbody>
+                                  </table>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center h-32 gap-3">
+                  <div className="icon-soft w-10 h-10 bg-[#faf9f5] text-[#9a9a98]">
+                    <Users strokeWidth={1.8} className="w-5 h-5" />
+                  </div>
+                  <span className="text-[13.5px] text-[#9a9a98]">{t.dashboard.noData}</span>
                 </div>
               )}
             </CardContent>
@@ -728,45 +1050,51 @@ export function IikoSettingsPage() {
 
           {/* Extended Analytics Section */}
           <div className="grid gap-6 lg:grid-cols-2">
+
             {/* Waiters Analytics */}
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <User className="h-5 w-5" />
+                <CardTitle className="flex items-center gap-2 text-[15px] font-semibold">
+                  <div className="icon-soft w-7 h-7 bg-[#f3effc] text-[#6d28d9]">
+                    <User strokeWidth={1.8} className="w-[15px] h-[15px]" />
+                  </div>
                   {t.iiko.byWaiter || 'По официантам'}
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 {waiterLoading ? (
                   <div className="flex items-center justify-center h-64">
-                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                    <div className="w-8 h-8 spinner" />
                   </div>
                 ) : waiterData?.byWaiter && waiterData.byWaiter.length > 0 ? (
-                  <div className="overflow-x-auto">
+                  <div className="overflow-x-auto scroll-refined">
                     <table className="w-full">
                       <thead>
-                        <tr className="border-b">
-                          <th className="text-left py-2 px-2 font-medium text-slate-500 text-sm">{t.iiko.waiter || 'Официант'}</th>
-                          <th className="text-right py-2 px-2 font-medium text-slate-500 text-sm">{t.iiko.revenue || 'Выручка'}</th>
-                          <th className="text-right py-2 px-2 font-medium text-slate-500 text-sm">{t.iiko.orders || 'Заказы'}</th>
-                          <th className="text-right py-2 px-2 font-medium text-slate-500 text-sm">{t.iiko.avgCheck || 'Ср. чек'}</th>
+                        <tr className="border-b border-[#ebe9e3]">
+                          <th className="text-left py-2 px-2 font-semibold uppercase tracking-[0.06em] text-[#9a9a98] text-[11px]">{t.iiko.waiter || 'Официант'}</th>
+                          <th className="text-right py-2 px-2 font-semibold uppercase tracking-[0.06em] text-[#9a9a98] text-[11px]">{t.iiko.revenue || 'Выручка'}</th>
+                          <th className="text-right py-2 px-2 font-semibold uppercase tracking-[0.06em] text-[#9a9a98] text-[11px]">{t.iiko.orders || 'Заказы'}</th>
+                          <th className="text-right py-2 px-2 font-semibold uppercase tracking-[0.06em] text-[#9a9a98] text-[11px]">{t.iiko.avgCheck || 'Ср. чек'}</th>
                         </tr>
                       </thead>
                       <tbody>
                         {waiterData.byWaiter.slice(0, 10).map((item) => (
-                          <tr key={item.waiterId || item.waiterName} className="border-b last:border-0 hover:bg-slate-50">
-                            <td className="py-2 px-2 font-medium text-sm">{item.waiterName}</td>
-                            <td className="py-2 px-2 text-right text-sm">{formatCurrency(item.revenue)}</td>
-                            <td className="py-2 px-2 text-right text-sm">{item.orderCount}</td>
-                            <td className="py-2 px-2 text-right text-sm text-primary font-medium">{formatCurrency(item.averageCheck)}</td>
+                          <tr key={item.waiterId || item.waiterName} className="border-b border-[#ebe9e3] last:border-0 hover:bg-[#faf9f5] transition-colors">
+                            <td className="py-2.5 px-2 font-medium text-[13px] text-[#0a0a0a]">{item.waiterName}</td>
+                            <td className="py-2.5 px-2 text-right text-[13px] tabular-nums text-[#1f1f1f]">{formatCurrency(item.revenue)}</td>
+                            <td className="py-2.5 px-2 text-right text-[13px] tabular-nums text-[#1f1f1f]">{item.orderCount}</td>
+                            <td className="py-2.5 px-2 text-right text-[13px] tabular-nums text-[#6d28d9] font-medium">{formatCurrency(item.averageCheck)}</td>
                           </tr>
                         ))}
                       </tbody>
                     </table>
                   </div>
                 ) : (
-                  <div className="flex items-center justify-center h-32 text-slate-500">
-                    {t.dashboard.noData}
+                  <div className="flex flex-col items-center justify-center h-32 gap-2">
+                    <div className="icon-soft w-10 h-10 bg-[#faf9f5] text-[#9a9a98]">
+                      <User strokeWidth={1.8} className="w-[18px] h-[18px]" />
+                    </div>
+                    <p className="text-[13.5px] text-[#9a9a98]">{t.dashboard.noData}</p>
                   </div>
                 )}
               </CardContent>
@@ -775,15 +1103,17 @@ export function IikoSettingsPage() {
             {/* Payment Types Analytics */}
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <CreditCard className="h-5 w-5" />
+                <CardTitle className="flex items-center gap-2 text-[15px] font-semibold">
+                  <div className="icon-soft w-7 h-7 bg-[#ecfdf5] text-[#047857]">
+                    <CreditCard strokeWidth={1.8} className="w-[15px] h-[15px]" />
+                  </div>
                   {t.iiko.byPaymentType || 'По типам оплаты'}
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 {paymentLoading ? (
                   <div className="flex items-center justify-center h-64">
-                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                    <div className="w-8 h-8 spinner" />
                   </div>
                 ) : paymentData?.byPaymentType && paymentData.byPaymentType.length > 0 ? (
                   <div className="flex flex-col">
@@ -805,24 +1135,30 @@ export function IikoSettingsPage() {
                             <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                           ))}
                         </Pie>
-                        <Tooltip formatter={(value) => formatCurrency(Number(value) || 0)} />
+                        <Tooltip
+                          formatter={(value) => formatCurrency(Number(value) || 0)}
+                          contentStyle={{ borderRadius: '12px', border: '1px solid #ebe9e3', boxShadow: '0 4px 16px rgba(0,0,0,0.08)', fontSize: '12px' }}
+                        />
                       </PieChart>
                     </ResponsiveContainer>
                     <div className="flex flex-wrap gap-2 justify-center mt-2">
                       {paymentData.byPaymentType.map((item, index) => (
                         <div key={item.paymentType} className="flex items-center gap-1 text-xs">
                           <div
-                            className="w-3 h-3 rounded-sm"
+                            className="w-2.5 h-2.5 rounded-sm"
                             style={{ backgroundColor: COLORS[index % COLORS.length] }}
                           />
-                          <span className="text-slate-600">{item.paymentType}: {formatCurrency(item.revenue)}</span>
+                          <span className="text-[#6b6b6b]">{item.paymentType}: {formatCurrency(item.revenue)}</span>
                         </div>
                       ))}
                     </div>
                   </div>
                 ) : (
-                  <div className="flex items-center justify-center h-32 text-slate-500">
-                    {t.dashboard.noData}
+                  <div className="flex flex-col items-center justify-center h-32 gap-3">
+                    <div className="icon-soft w-10 h-10 bg-[#faf9f5] text-[#9a9a98]">
+                      <CreditCard strokeWidth={1.8} className="w-5 h-5" />
+                    </div>
+                    <span className="text-[13.5px] text-[#9a9a98]">{t.dashboard.noData}</span>
                   </div>
                 )}
               </CardContent>
@@ -834,44 +1170,46 @@ export function IikoSettingsPage() {
             {/* Guest Analytics */}
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Users className="h-5 w-5" />
+                <CardTitle className="flex items-center gap-2 text-[15px] font-semibold">
+                  <div className="icon-soft w-7 h-7 bg-[#f3effc] text-[#6d28d9]">
+                    <Users strokeWidth={1.8} className="w-[15px] h-[15px]" />
+                  </div>
                   {t.iiko.byGuests || 'По гостям'}
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 {guestLoading ? (
                   <div className="flex items-center justify-center h-64">
-                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                    <div className="w-8 h-8 spinner" />
                   </div>
                 ) : guestData?.summary?.hasGuestData ? (
                   <div className="space-y-4">
                     <div className="grid grid-cols-2 gap-4">
-                      <div className="bg-slate-50 rounded-lg p-3">
-                        <p className="text-sm text-slate-500">{t.iiko.totalGuests || 'Всего гостей'}</p>
-                        <p className="text-xl font-bold">{guestData.summary.totalGuests}</p>
+                      <div className="bg-[#faf9f5] border border-[#ebe9e3] rounded-[12px] p-3">
+                        <p className="eyebrow mb-1">{t.iiko.totalGuests || 'Всего гостей'}</p>
+                        <p className="text-[22px] font-bold text-[#0a0a0a] tabular-nums">{guestData.summary.totalGuests}</p>
                       </div>
-                      <div className="bg-slate-50 rounded-lg p-3">
-                        <p className="text-sm text-slate-500">{t.iiko.avgCheckPerGuest || 'Ср. чек на гостя'}</p>
-                        <p className="text-xl font-bold text-primary">{formatCurrency(guestData.summary.avgCheckPerGuest)}</p>
+                      <div className="bg-[#faf9f5] border border-[#ebe9e3] rounded-[12px] p-3">
+                        <p className="eyebrow mb-1">{t.iiko.avgCheckPerGuest || 'Ср. чек на гостя'}</p>
+                        <p className="text-[22px] font-bold text-[#0a0a0a] tabular-nums">{formatCurrency(guestData.summary.avgCheckPerGuest)}</p>
                       </div>
                     </div>
                     {guestData.byGuestCount && guestData.byGuestCount.length > 0 && (
                       <div className="overflow-x-auto">
                         <table className="w-full">
                           <thead>
-                            <tr className="border-b">
-                              <th className="text-left py-2 px-2 font-medium text-slate-500 text-sm">{t.iiko.guestCount || 'Гостей'}</th>
-                              <th className="text-right py-2 px-2 font-medium text-slate-500 text-sm">{t.iiko.orders || 'Заказы'}</th>
-                              <th className="text-right py-2 px-2 font-medium text-slate-500 text-sm">{t.iiko.avgCheck || 'Ср. чек'}</th>
+                            <tr className="border-b border-[#ebe9e3]">
+                              <th className="text-left py-2 px-2 text-[11px] font-semibold uppercase tracking-[0.06em] text-[#9a9a98]">{t.iiko.guestCount || 'Гостей'}</th>
+                              <th className="text-right py-2 px-2 text-[11px] font-semibold uppercase tracking-[0.06em] text-[#9a9a98]">{t.iiko.orders || 'Заказы'}</th>
+                              <th className="text-right py-2 px-2 text-[11px] font-semibold uppercase tracking-[0.06em] text-[#9a9a98]">{t.iiko.avgCheck || 'Ср. чек'}</th>
                             </tr>
                           </thead>
                           <tbody>
                             {guestData.byGuestCount.map((item) => (
-                              <tr key={item.label} className="border-b last:border-0 hover:bg-slate-50">
-                                <td className="py-2 px-2 font-medium text-sm">{item.label}</td>
-                                <td className="py-2 px-2 text-right text-sm">{item.orderCount}</td>
-                                <td className="py-2 px-2 text-right text-sm text-primary font-medium">{formatCurrency(item.avgCheck)}</td>
+                              <tr key={item.label} className="border-b border-[#ebe9e3] last:border-0 hover:bg-[#faf9f5] transition-colors">
+                                <td className="py-2 px-2 text-[13.5px] font-medium text-[#1f1f1f]">{item.label}</td>
+                                <td className="py-2 px-2 text-right text-[13.5px] tabular-nums">{item.orderCount}</td>
+                                <td className="py-2 px-2 text-right text-[13.5px] tabular-nums font-semibold text-[#0a0a0a]">{formatCurrency(item.avgCheck)}</td>
                               </tr>
                             ))}
                           </tbody>
@@ -880,8 +1218,11 @@ export function IikoSettingsPage() {
                     )}
                   </div>
                 ) : (
-                  <div className="flex items-center justify-center h-32 text-slate-500">
-                    {t.iiko.noGuestData || 'Нет данных о гостях'}
+                  <div className="flex flex-col items-center justify-center h-32 gap-3">
+                    <div className="icon-soft w-10 h-10 bg-[#faf9f5] text-[#9a9a98]">
+                      <Users strokeWidth={1.8} className="w-5 h-5" />
+                    </div>
+                    <span className="text-[13.5px] text-[#9a9a98]">{t.iiko.noGuestData || 'Нет данных о гостях'}</span>
                   </div>
                 )}
               </CardContent>
@@ -890,50 +1231,57 @@ export function IikoSettingsPage() {
             {/* Service Speed Analytics */}
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Timer className="h-5 w-5" />
+                <CardTitle className="flex items-center gap-2 text-[15px] font-semibold">
+                  <div className="icon-soft w-7 h-7 bg-[#fffbeb] text-[#b45309]">
+                    <Timer strokeWidth={1.8} className="w-[15px] h-[15px]" />
+                  </div>
                   {t.iiko.serviceSpeed || 'Скорость обслуживания'}
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 {serviceSpeedLoading ? (
                   <div className="flex items-center justify-center h-64">
-                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                    <div className="w-8 h-8 spinner" />
                   </div>
                 ) : (serviceSpeedData?.summary?.totalOrders ?? 0) > 0 ? (
                   <div className="space-y-4">
                     <div className="grid grid-cols-2 gap-4">
-                      <div className="bg-slate-50 rounded-lg p-3">
-                        <p className="text-sm text-slate-500">{t.iiko.avgServiceTime || 'Среднее время'}</p>
-                        <p className="text-xl font-bold">{Math.round(serviceSpeedData?.summary?.avgServiceMinutes ?? 0)} {t.iiko.minutes || 'мин'}</p>
+                      <div className="bg-[#faf9f5] border border-[#ebe9e3] rounded-[12px] p-3">
+                        <p className="eyebrow mb-1">{t.iiko.avgServiceTime || 'Среднее время'}</p>
+                        <p className="text-[22px] font-bold text-[#0a0a0a] tabular-nums">{Math.round(serviceSpeedData?.summary?.avgServiceMinutes ?? 0)} <span className="text-[14px] font-medium text-[#6b6b6b]">{t.iiko.minutes || 'мин'}</span></p>
                       </div>
-                      <div className="bg-slate-50 rounded-lg p-3">
-                        <p className="text-sm text-slate-500">{t.iiko.medianServiceTime || 'Медиана'}</p>
-                        <p className="text-xl font-bold text-primary">{Math.round(serviceSpeedData?.summary?.medianServiceMinutes ?? 0)} {t.iiko.minutes || 'мин'}</p>
+                      <div className="bg-[#faf9f5] border border-[#ebe9e3] rounded-[12px] p-3">
+                        <p className="eyebrow mb-1">{t.iiko.medianServiceTime || 'Медиана'}</p>
+                        <p className="text-[22px] font-bold text-[#0a0a0a] tabular-nums">{Math.round(serviceSpeedData?.summary?.medianServiceMinutes ?? 0)} <span className="text-[14px] font-medium text-[#6b6b6b]">{t.iiko.minutes || 'мин'}</span></p>
                       </div>
                     </div>
                     {serviceSpeedData?.byHour && serviceSpeedData.byHour.length > 0 && (
                       <ResponsiveContainer width="100%" height={200}>
                         <BarChart data={serviceSpeedData?.byHour}>
-                          <CartesianGrid strokeDasharray="3 3" />
+                          <CartesianGrid strokeDasharray="3 3" stroke="#ebe9e3" />
                           <XAxis
                             dataKey="hour"
                             tickFormatter={(value) => `${value}:00`}
                             tick={{ fontSize: 11 }}
+                            stroke="#9a9a98"
                           />
-                          <YAxis tickFormatter={(value) => `${Math.round(value)}`} tick={{ fontSize: 11 }} />
+                          <YAxis tickFormatter={(value) => `${Math.round(value)}`} tick={{ fontSize: 11 }} stroke="#9a9a98" />
                           <Tooltip
                             formatter={(value) => [`${Math.round(Number(value))} мин`, 'Среднее время']}
                             labelFormatter={(label) => `${label}:00 - ${Number(label) + 1}:00`}
+                            contentStyle={{ borderRadius: '12px', border: '1px solid #ebe9e3', boxShadow: '0 4px 16px rgba(0,0,0,0.08)', fontSize: '12px' }}
                           />
-                          <Bar dataKey="avgMinutes" fill="#f97316" radius={[4, 4, 0, 0]} />
+                          <Bar dataKey="avgMinutes" fill="#b45309" radius={[6, 6, 0, 0]} />
                         </BarChart>
                       </ResponsiveContainer>
                     )}
                   </div>
                 ) : (
-                  <div className="flex items-center justify-center h-32 text-slate-500">
-                    {t.dashboard.noData}
+                  <div className="flex flex-col items-center justify-center h-32 gap-3">
+                    <div className="icon-soft w-10 h-10 bg-[#faf9f5] text-[#9a9a98]">
+                      <Timer strokeWidth={1.8} className="w-5 h-5" />
+                    </div>
+                    <span className="text-[13.5px] text-[#9a9a98]">{t.dashboard.noData}</span>
                   </div>
                 )}
               </CardContent>
@@ -945,42 +1293,47 @@ export function IikoSettingsPage() {
             {/* Tables Analytics */}
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Table2 className="h-5 w-5" />
+                <CardTitle className="flex items-center gap-2 text-[15px] font-semibold">
+                  <div className="icon-soft w-7 h-7 bg-[#eff6ff] text-[#2563eb]">
+                    <Table2 strokeWidth={1.8} className="w-[15px] h-[15px]" />
+                  </div>
                   {t.iiko.byTables || 'По столам'}
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 {tableLoading ? (
                   <div className="flex items-center justify-center h-64">
-                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                    <div className="w-8 h-8 spinner" />
                   </div>
                 ) : tableData?.byTable && tableData.byTable.length > 0 ? (
                   <div className="overflow-x-auto max-h-[300px] overflow-y-auto">
                     <table className="w-full">
                       <thead className="sticky top-0 bg-white">
-                        <tr className="border-b">
-                          <th className="text-left py-2 px-2 font-medium text-slate-500 text-sm">{t.iiko.table || 'Стол'}</th>
-                          <th className="text-right py-2 px-2 font-medium text-slate-500 text-sm">{t.iiko.revenue || 'Выручка'}</th>
-                          <th className="text-right py-2 px-2 font-medium text-slate-500 text-sm">{t.iiko.orders || 'Заказы'}</th>
-                          <th className="text-right py-2 px-2 font-medium text-slate-500 text-sm">{t.iiko.guests || 'Гости'}</th>
+                        <tr className="border-b border-[#ebe9e3]">
+                          <th className="text-left py-2 px-2 text-[11px] font-semibold uppercase tracking-[0.06em] text-[#9a9a98]">{t.iiko.table || 'Стол'}</th>
+                          <th className="text-right py-2 px-2 text-[11px] font-semibold uppercase tracking-[0.06em] text-[#9a9a98]">{t.iiko.revenue || 'Выручка'}</th>
+                          <th className="text-right py-2 px-2 text-[11px] font-semibold uppercase tracking-[0.06em] text-[#9a9a98]">{t.iiko.orders || 'Заказы'}</th>
+                          <th className="text-right py-2 px-2 text-[11px] font-semibold uppercase tracking-[0.06em] text-[#9a9a98]">{t.iiko.guests || 'Гости'}</th>
                         </tr>
                       </thead>
                       <tbody>
                         {tableData.byTable.map((item) => (
-                          <tr key={item.tableNum} className="border-b last:border-0 hover:bg-slate-50">
-                            <td className="py-2 px-2 font-medium text-sm">#{item.tableNum}</td>
-                            <td className="py-2 px-2 text-right text-sm">{formatCurrency(item.revenue)}</td>
-                            <td className="py-2 px-2 text-right text-sm">{item.orderCount}</td>
-                            <td className="py-2 px-2 text-right text-sm text-primary">{item.guestCount}</td>
+                          <tr key={item.tableNum} className="border-b border-[#ebe9e3] last:border-0 hover:bg-[#faf9f5] transition-colors">
+                            <td className="py-2 px-2 text-[13.5px] font-medium text-[#1f1f1f]">#{item.tableNum}</td>
+                            <td className="py-2 px-2 text-right text-[13.5px] tabular-nums">{formatCurrency(item.revenue)}</td>
+                            <td className="py-2 px-2 text-right text-[13.5px] tabular-nums">{item.orderCount}</td>
+                            <td className="py-2 px-2 text-right text-[13.5px] tabular-nums font-semibold text-[#0a0a0a]">{item.guestCount}</td>
                           </tr>
                         ))}
                       </tbody>
                     </table>
                   </div>
                 ) : (
-                  <div className="flex items-center justify-center h-32 text-slate-500">
-                    {t.dashboard.noData}
+                  <div className="flex flex-col items-center justify-center h-32 gap-3">
+                    <div className="icon-soft w-10 h-10 bg-[#faf9f5] text-[#9a9a98]">
+                      <Table2 strokeWidth={1.8} className="w-5 h-5" />
+                    </div>
+                    <span className="text-[13.5px] text-[#9a9a98]">{t.dashboard.noData}</span>
                   </div>
                 )}
               </CardContent>
@@ -989,44 +1342,46 @@ export function IikoSettingsPage() {
             {/* Discounts Analytics */}
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Percent className="h-5 w-5" />
+                <CardTitle className="flex items-center gap-2 text-[15px] font-semibold">
+                  <div className="icon-soft w-7 h-7 bg-[#fef2f2] text-[#be123c]">
+                    <Percent strokeWidth={1.8} className="w-[15px] h-[15px]" />
+                  </div>
                   {t.iiko.byDiscounts || 'По скидкам'}
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 {discountLoading ? (
                   <div className="flex items-center justify-center h-64">
-                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                    <div className="w-8 h-8 spinner" />
                   </div>
                 ) : discountData?.summary ? (
                   <div className="space-y-4">
                     <div className="grid grid-cols-2 gap-4">
-                      <div className="bg-slate-50 rounded-lg p-3">
-                        <p className="text-sm text-slate-500">{t.iiko.totalDiscount || 'Всего скидок'}</p>
-                        <p className="text-xl font-bold text-red-500">{formatCurrency(discountData.summary.totalDiscount)}</p>
+                      <div className="bg-[#fef2f2] border border-[#fee2e2] rounded-[12px] p-3">
+                        <p className="eyebrow mb-1 text-[#be123c]">{t.iiko.totalDiscount || 'Всего скидок'}</p>
+                        <p className="text-[22px] font-bold text-[#be123c] tabular-nums">{formatCurrency(discountData.summary.totalDiscount)}</p>
                       </div>
-                      <div className="bg-slate-50 rounded-lg p-3">
-                        <p className="text-sm text-slate-500">{t.iiko.discountPercent || '% от выручки'}</p>
-                        <p className="text-xl font-bold">{discountData.summary.discountPercentage.toFixed(1)}%</p>
+                      <div className="bg-[#faf9f5] border border-[#ebe9e3] rounded-[12px] p-3">
+                        <p className="eyebrow mb-1">{t.iiko.discountPercent || '% от выручки'}</p>
+                        <p className="text-[22px] font-bold text-[#0a0a0a] tabular-nums">{discountData.summary.discountPercentage.toFixed(1)}%</p>
                       </div>
                     </div>
                     {discountData.byDiscountType && discountData.byDiscountType.length > 0 && (
                       <div className="overflow-x-auto">
                         <table className="w-full">
                           <thead>
-                            <tr className="border-b">
-                              <th className="text-left py-2 px-2 font-medium text-slate-500 text-sm">{t.iiko.discountType || 'Тип скидки'}</th>
-                              <th className="text-right py-2 px-2 font-medium text-slate-500 text-sm">{t.iiko.amount || 'Сумма'}</th>
-                              <th className="text-right py-2 px-2 font-medium text-slate-500 text-sm">%</th>
+                            <tr className="border-b border-[#ebe9e3]">
+                              <th className="text-left py-2 px-2 text-[11px] font-semibold uppercase tracking-[0.06em] text-[#9a9a98]">{t.iiko.discountType || 'Тип скидки'}</th>
+                              <th className="text-right py-2 px-2 text-[11px] font-semibold uppercase tracking-[0.06em] text-[#9a9a98]">{t.iiko.amount || 'Сумма'}</th>
+                              <th className="text-right py-2 px-2 text-[11px] font-semibold uppercase tracking-[0.06em] text-[#9a9a98]">%</th>
                             </tr>
                           </thead>
                           <tbody>
                             {discountData.byDiscountType.map((item) => (
-                              <tr key={item.discountType} className="border-b last:border-0 hover:bg-slate-50">
-                                <td className="py-2 px-2 font-medium text-sm">{item.discountType}</td>
-                                <td className="py-2 px-2 text-right text-sm text-red-500">{formatCurrency(item.totalDiscount)}</td>
-                                <td className="py-2 px-2 text-right text-sm">{item.percentage.toFixed(1)}%</td>
+                              <tr key={item.discountType} className="border-b border-[#ebe9e3] last:border-0 hover:bg-[#faf9f5] transition-colors">
+                                <td className="py-2 px-2 text-[13.5px] font-medium text-[#1f1f1f]">{item.discountType}</td>
+                                <td className="py-2 px-2 text-right text-[13.5px] tabular-nums text-[#be123c]">{formatCurrency(item.totalDiscount)}</td>
+                                <td className="py-2 px-2 text-right text-[13.5px] tabular-nums text-[#6b6b6b]">{item.percentage.toFixed(1)}%</td>
                               </tr>
                             ))}
                           </tbody>
@@ -1035,8 +1390,11 @@ export function IikoSettingsPage() {
                     )}
                   </div>
                 ) : (
-                  <div className="flex items-center justify-center h-32 text-slate-500">
-                    {t.dashboard.noData}
+                  <div className="flex flex-col items-center justify-center h-32 gap-3">
+                    <div className="icon-soft w-10 h-10 bg-[#faf9f5] text-[#9a9a98]">
+                      <Percent strokeWidth={1.8} className="w-5 h-5" />
+                    </div>
+                    <span className="text-[13.5px] text-[#9a9a98]">{t.dashboard.noData}</span>
                   </div>
                 )}
               </CardContent>
@@ -1046,15 +1404,17 @@ export function IikoSettingsPage() {
           {/* Cooking Places Analytics */}
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <ChefHat className="h-5 w-5" />
+              <CardTitle className="flex items-center gap-2 text-[15px] font-semibold">
+                <div className="icon-soft w-7 h-7 bg-[#fffbeb] text-[#b45309]">
+                  <ChefHat strokeWidth={1.8} className="w-[15px] h-[15px]" />
+                </div>
                 {t.iiko.byCookingPlace || 'По местам приготовления'}
               </CardTitle>
             </CardHeader>
             <CardContent>
               {cookingPlaceLoading ? (
                 <div className="flex items-center justify-center h-32">
-                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                  <div className="w-8 h-8 spinner" />
                 </div>
               ) : cookingPlaceData?.byCookingPlace && cookingPlaceData.byCookingPlace.length > 0 ? (
                 <div className="flex flex-col lg:flex-row gap-6">
@@ -1077,31 +1437,34 @@ export function IikoSettingsPage() {
                             <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                           ))}
                         </Pie>
-                        <Tooltip formatter={(value) => formatCurrency(Number(value) || 0)} />
+                        <Tooltip
+                          formatter={(value) => formatCurrency(Number(value) || 0)}
+                          contentStyle={{ borderRadius: '12px', border: '1px solid #ebe9e3', boxShadow: '0 4px 16px rgba(0,0,0,0.08)', fontSize: '12px' }}
+                        />
                       </PieChart>
                     </ResponsiveContainer>
                   </div>
                   <div className="flex-1">
                     <table className="w-full">
                       <thead>
-                        <tr className="border-b">
-                          <th className="text-left py-2 px-2 font-medium text-slate-500 text-sm">{t.iiko.place || 'Место'}</th>
-                          <th className="text-right py-2 px-2 font-medium text-slate-500 text-sm">{t.iiko.revenue || 'Выручка'}</th>
-                          <th className="text-right py-2 px-2 font-medium text-slate-500 text-sm">%</th>
+                        <tr className="border-b border-[#ebe9e3]">
+                          <th className="text-left py-2 px-2 text-[11px] font-semibold uppercase tracking-[0.06em] text-[#9a9a98]">{t.iiko.place || 'Место'}</th>
+                          <th className="text-right py-2 px-2 text-[11px] font-semibold uppercase tracking-[0.06em] text-[#9a9a98]">{t.iiko.revenue || 'Выручка'}</th>
+                          <th className="text-right py-2 px-2 text-[11px] font-semibold uppercase tracking-[0.06em] text-[#9a9a98]">%</th>
                         </tr>
                       </thead>
                       <tbody>
                         {cookingPlaceData.byCookingPlace.map((item, index) => (
-                          <tr key={item.cookingPlace} className="border-b last:border-0 hover:bg-slate-50">
-                            <td className="py-2 px-2 font-medium text-sm flex items-center gap-2">
+                          <tr key={item.cookingPlace} className="border-b border-[#ebe9e3] last:border-0 hover:bg-[#faf9f5] transition-colors">
+                            <td className="py-2 px-2 text-[13.5px] font-medium text-[#1f1f1f] flex items-center gap-2">
                               <div
-                                className="w-3 h-3 rounded-sm"
+                                className="w-2.5 h-2.5 rounded-sm shrink-0"
                                 style={{ backgroundColor: COLORS[index % COLORS.length] }}
                               />
                               {item.cookingPlace}
                             </td>
-                            <td className="py-2 px-2 text-right text-sm">{formatCurrency(item.revenue)}</td>
-                            <td className="py-2 px-2 text-right text-sm text-primary">{item.percentage.toFixed(1)}%</td>
+                            <td className="py-2 px-2 text-right text-[13.5px] tabular-nums">{formatCurrency(item.revenue)}</td>
+                            <td className="py-2 px-2 text-right text-[13.5px] tabular-nums font-semibold text-[#0a0a0a]">{item.percentage.toFixed(1)}%</td>
                           </tr>
                         ))}
                       </tbody>
@@ -1109,8 +1472,11 @@ export function IikoSettingsPage() {
                   </div>
                 </div>
               ) : (
-                <div className="flex items-center justify-center h-32 text-slate-500">
-                  {t.dashboard.noData}
+                <div className="flex flex-col items-center justify-center h-32 gap-3">
+                  <div className="icon-soft w-10 h-10 bg-[#faf9f5] text-[#9a9a98]">
+                    <ChefHat strokeWidth={1.8} className="w-5 h-5" />
+                  </div>
+                  <span className="text-[13.5px] text-[#9a9a98]">{t.dashboard.noData}</span>
                 </div>
               )}
             </CardContent>
@@ -1118,11 +1484,131 @@ export function IikoSettingsPage() {
         </>
       )}
 
+      {/* Nomenclature Section */}
+      {settings?.isActive && (
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2 text-[15px] font-semibold">
+                  <div className="icon-soft w-7 h-7 bg-[#eff6ff] text-[#2563eb]">
+                    <List strokeWidth={1.8} className="w-[15px] h-[15px]" />
+                  </div>
+                  {t.iiko.nomenclature || 'Номенклатура'}
+                </CardTitle>
+                <CardDescription>{t.iiko.nomenclatureSubtitle || 'Актуальное меню из iiko'}</CardDescription>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setShowNomenclature(true)
+                  refetchNomenclature()
+                }}
+                disabled={nomenclatureLoading}
+              >
+                {nomenclatureLoading && <Loader2 strokeWidth={1.8} className="mr-2 h-4 w-4 animate-spin" />}
+                {nomenclatureLoading ? (t.iiko.loadingNomenclature || 'Загрузка...') : (t.iiko.loadNomenclature || 'Загрузить меню')}
+              </Button>
+            </div>
+          </CardHeader>
+          {showNomenclature && (
+            <CardContent>
+              {nomenclatureLoading ? (
+                <div className="flex items-center justify-center h-32">
+                  <div className="w-8 h-8 spinner" />
+                </div>
+              ) : nomenclatureData ? (
+                <div className="space-y-5">
+                  {/* Stats */}
+                  <div className="grid grid-cols-3 gap-3">
+                    <div className="bg-[#f3effc] border border-[#e9e3f8] rounded-[16px] p-4 text-center">
+                      <p className="text-[26px] font-bold text-[#6d28d9] tabular-nums">{nomenclatureData.totalItems}</p>
+                      <p className="eyebrow mt-1">{t.iiko.totalItems || 'Позиций'}</p>
+                    </div>
+                    <div className="bg-[#eff6ff] border border-[#dbeafe] rounded-[16px] p-4 text-center">
+                      <p className="text-[26px] font-bold text-[#2563eb] tabular-nums">{nomenclatureData.totalGroups}</p>
+                      <p className="eyebrow mt-1">{t.iiko.totalGroups || 'Групп'}</p>
+                    </div>
+                    <div className="bg-[#ecfdf5] border border-[#d1fae5] rounded-[16px] p-4 text-center">
+                      <p className="text-[26px] font-bold text-[#047857] tabular-nums">{nomenclatureData.totalCategories}</p>
+                      <p className="eyebrow mt-1">{t.iiko.byCategory || 'Категорий'}</p>
+                    </div>
+                  </div>
+
+                  {/* Categories list */}
+                  {nomenclatureData.categories.length > 0 && (
+                    <div>
+                      <h4 className="text-[13px] font-semibold text-[#1f1f1f] mb-2">{t.iiko.byCategory || 'Категории'}</h4>
+                      <div className="flex flex-wrap gap-2">
+                        {nomenclatureData.categories.map((cat) => (
+                          <span key={cat.id} className="px-3 py-1 bg-[#faf9f5] border border-[#ebe9e3] rounded-full text-[13px] text-[#6b6b6b]">
+                            {cat.name}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Groups with items */}
+                  <div className="space-y-2">
+                    {nomenclatureData.byGroup.map((group) => (
+                      <details key={group.group} className="border border-[#ebe9e3] rounded-[16px] overflow-hidden">
+                        <summary className="px-4 py-3 cursor-pointer hover:bg-[#faf9f5] transition-colors flex items-center justify-between list-none">
+                          <span className="font-medium text-[13.5px] text-[#1f1f1f]">{group.group}</span>
+                          <span className="text-[11px] font-semibold text-[#6b6b6b] bg-[#faf9f5] border border-[#ebe9e3] px-2 py-0.5 rounded-full tabular-nums">{group.itemCount}</span>
+                        </summary>
+                        <div className="border-t border-[#ebe9e3] bg-[#faf9f5] px-4 py-2">
+                          <table className="w-full text-[13px]">
+                            <thead>
+                              <tr className="border-b border-[#ebe9e3]">
+                                <th className="text-left py-2 text-[11px] font-semibold uppercase tracking-[0.06em] text-[#9a9a98]">{t.iiko.position || 'Позиция'}</th>
+                                <th className="text-left py-2 text-[11px] font-semibold uppercase tracking-[0.06em] text-[#9a9a98]">{t.iiko.code || 'Код'}</th>
+                                <th className="text-right py-2 text-[11px] font-semibold uppercase tracking-[0.06em] text-[#9a9a98]">{t.iiko.price || 'Цена'}</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {group.items.map((item) => (
+                                <tr key={item.id} className="border-b border-[#ebe9e3] last:border-0 hover:bg-white transition-colors">
+                                  <td className="py-2 text-[#1f1f1f]">
+                                    <span>{item.name}</span>
+                                    {item.categoryName && (
+                                      <span className="text-[11px] text-[#9a9a98] ml-2">{item.categoryName}</span>
+                                    )}
+                                  </td>
+                                  <td className="py-2 text-[#9a9a98]">{item.code || '—'}</td>
+                                  <td className="py-2 text-right font-semibold tabular-nums text-[#0a0a0a]">
+                                    {item.price ? formatCurrency(item.price) : '—'}
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </details>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center h-32 gap-3">
+                  <div className="icon-soft w-10 h-10 bg-[#faf9f5] text-[#9a9a98]">
+                    <List strokeWidth={1.8} className="w-5 h-5" />
+                  </div>
+                  <span className="text-[13.5px] text-[#9a9a98]">{t.dashboard.noData}</span>
+                </div>
+              )}
+            </CardContent>
+          )}
+        </Card>
+      )}
+
       {/* Settings Card - at the bottom */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Settings className="h-5 w-5" />
+          <CardTitle className="flex items-center gap-2 text-[15px] font-semibold">
+            <div className="icon-soft w-7 h-7 bg-[#faf9f5] text-[#6b6b6b] border border-[#ebe9e3]">
+              <Settings strokeWidth={1.8} className="w-[15px] h-[15px]" />
+            </div>
             {t.iiko.settings}
           </CardTitle>
           <CardDescription>
@@ -1136,7 +1622,7 @@ export function IikoSettingsPage() {
             <div className="space-y-2">
               <Label htmlFor="serverUrl">{t.iiko.serverUrl}</Label>
               <div className="relative">
-                <Server className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                <Server strokeWidth={1.8} className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#9a9a98]" />
                 <Input
                   id="serverUrl"
                   value={serverUrl}
@@ -1174,30 +1660,32 @@ export function IikoSettingsPage() {
             {/* Test result */}
             {testResult && (
               <div
-                className={`flex items-center gap-2 p-3 rounded-lg ${
-                  testResult.success ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'
+                className={`flex items-center gap-2 p-3 rounded-[12px] border text-[13.5px] ${
+                  testResult.success
+                    ? 'bg-[#ecfdf5] text-[#15803d] border-[#d1fae5]'
+                    : 'bg-[#fef2f2] text-[#be123c] border-[#fee2e2]'
                 }`}
               >
                 {testResult.success ? (
-                  <CheckCircle2 className="h-5 w-5" />
+                  <CheckCircle2 strokeWidth={1.8} className="h-4 w-4 shrink-0" />
                 ) : (
-                  <AlertCircle className="h-5 w-5" />
+                  <AlertCircle strokeWidth={1.8} className="h-4 w-4 shrink-0" />
                 )}
-                <span className="text-sm">{testResult.message}</span>
+                <span>{testResult.message}</span>
               </div>
             )}
 
             {/* Save result */}
             {saveSettingsMutation.isSuccess && (
-              <div className="flex items-center gap-2 p-3 rounded-lg bg-green-50 text-green-700">
-                <CheckCircle2 className="h-5 w-5" />
-                <span className="text-sm">{t.iiko.settingsSaved}</span>
+              <div className="flex items-center gap-2 p-3 rounded-[12px] bg-[#ecfdf5] border border-[#d1fae5] text-[#15803d] text-[13.5px]">
+                <CheckCircle2 strokeWidth={1.8} className="h-4 w-4 shrink-0" />
+                <span>{t.iiko.settingsSaved}</span>
               </div>
             )}
 
             <div className="flex flex-col sm:flex-row gap-2">
               <Button type="submit" disabled={saveSettingsMutation.isPending} className="w-full sm:w-auto">
-                {saveSettingsMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {saveSettingsMutation.isPending && <Loader2 strokeWidth={1.8} className="mr-2 h-4 w-4 animate-spin" />}
                 {saveSettingsMutation.isPending ? t.iiko.saving : t.iiko.saveSettings}
               </Button>
               <Button
@@ -1207,7 +1695,7 @@ export function IikoSettingsPage() {
                 disabled={testConnectionMutation.isPending || !settings}
                 className="w-full sm:w-auto"
               >
-                {testConnectionMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {testConnectionMutation.isPending && <Loader2 strokeWidth={1.8} className="mr-2 h-4 w-4 animate-spin" />}
                 {testConnectionMutation.isPending ? t.iiko.testing : t.iiko.testConnection}
               </Button>
             </div>

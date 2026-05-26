@@ -3,10 +3,10 @@ import { forwardRef, type HTMLAttributes, type TdHTMLAttributes, type ThHTMLAttr
 
 const Table = forwardRef<HTMLTableElement, HTMLAttributes<HTMLTableElement>>(
   ({ className, ...props }, ref) => (
-    <div className="relative w-full overflow-auto rounded-xl">
+    <div className="scroll-refined relative w-full overflow-auto">
       <table
         ref={ref}
-        className={cn("w-full caption-bottom text-sm", className)}
+        className={cn("w-full caption-bottom text-[13.5px]", className)}
         {...props}
       />
     </div>
@@ -16,7 +16,7 @@ Table.displayName = "Table"
 
 const TableHeader = forwardRef<HTMLTableSectionElement, HTMLAttributes<HTMLTableSectionElement>>(
   ({ className, ...props }, ref) => (
-    <thead ref={ref} className={cn("bg-slate-50/80 [&_tr]:border-b [&_tr]:border-slate-100", className)} {...props} />
+    <thead ref={ref} className={cn("[&_tr]:border-b [&_tr]:border-[#ebe9e3]", className)} {...props} />
   )
 )
 TableHeader.displayName = "TableHeader"
@@ -37,7 +37,7 @@ const TableFooter = forwardRef<HTMLTableSectionElement, HTMLAttributes<HTMLTable
     <tfoot
       ref={ref}
       className={cn(
-        "border-t bg-slate-50/80 font-medium [&>tr]:last:border-b-0",
+        "border-t border-[#ebe9e3] bg-[#faf9f5] font-medium [&>tr]:last:border-b-0",
         className
       )}
       {...props}
@@ -51,7 +51,7 @@ const TableRow = forwardRef<HTMLTableRowElement, HTMLAttributes<HTMLTableRowElem
     <tr
       ref={ref}
       className={cn(
-        "border-b border-slate-100 transition-colors hover:bg-slate-50/50 data-[state=selected]:bg-slate-50",
+        "border-b border-[#ebe9e3] transition-colors duration-150 hover:bg-[#faf9f5] data-[state=selected]:bg-[#f3effc]",
         className
       )}
       {...props}
@@ -65,7 +65,7 @@ const TableHead = forwardRef<HTMLTableCellElement, ThHTMLAttributes<HTMLTableCel
     <th
       ref={ref}
       className={cn(
-        "h-11 px-4 text-left align-middle font-semibold text-slate-600 text-xs uppercase tracking-wider [&:has([role=checkbox])]:pr-0",
+        "h-10 px-4 text-left align-middle font-semibold text-[#9a9a98] text-[11px] uppercase tracking-[0.06em] [&:has([role=checkbox])]:pr-0",
         className
       )}
       {...props}
@@ -78,7 +78,7 @@ const TableCell = forwardRef<HTMLTableCellElement, TdHTMLAttributes<HTMLTableCel
   ({ className, ...props }, ref) => (
     <td
       ref={ref}
-      className={cn("p-4 align-middle text-slate-700 [&:has([role=checkbox])]:pr-0", className)}
+      className={cn("px-4 py-3 align-middle text-[#1f1f1f] [&:has([role=checkbox])]:pr-0", className)}
       {...props}
     />
   )
@@ -89,7 +89,7 @@ const TableCaption = forwardRef<HTMLTableCaptionElement, HTMLAttributes<HTMLTabl
   ({ className, ...props }, ref) => (
     <caption
       ref={ref}
-      className={cn("mt-4 text-sm text-slate-500", className)}
+      className={cn("mt-4 text-[12.5px] text-[#9a9a98]", className)}
       {...props}
     />
   )

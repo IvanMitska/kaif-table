@@ -37,7 +37,7 @@ import {
   YAxis,
 } from 'recharts'
 
-const COLORS = ['#4f46e5', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16', '#f97316', '#14b8a6']
+const COLORS = ['#6d28d9', '#2563eb', '#047857', '#b45309', '#be123c', '#0891b2', '#7c3aed', '#b8d92e', '#db2777', '#475569']
 
 type DateRange = '7d' | '30d' | '3m' | '6m' | '1y'
 
@@ -100,7 +100,7 @@ export function DashboardPage() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        <div className="w-8 h-8 spinner" />
       </div>
     )
   }
@@ -109,19 +109,16 @@ export function DashboardPage() {
   const expenseCategories = stats?.byCategory?.filter(c => c.total < 0) || []
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 page-enter">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-slate-900">{t.dashboard.title}</h2>
-          <p className="text-slate-500 mt-1">{t.dashboard.subtitle}</p>
+          <h2 className="page-title">{t.dashboard.title}</h2>
+          <p className="page-subtitle">{t.dashboard.subtitle}</p>
         </div>
         <div className="flex items-center gap-3">
-          <Button
-            onClick={() => setIsQuickAddOpen(true)}
-            className="bg-gradient-to-r from-primary to-indigo-600 hover:from-primary/90 hover:to-indigo-600/90 shadow-lg shadow-primary/25"
-          >
-            <Zap className="h-4 w-4 mr-2" />
+          <Button onClick={() => setIsQuickAddOpen(true)}>
+            <Zap className="h-[15px] w-[15px] mr-2" strokeWidth={1.8} />
             {t.dashboard.quickAdd}
           </Button>
           <Dropdown
@@ -140,79 +137,79 @@ export function DashboardPage() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card className="relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-emerald-500/10 to-transparent rounded-bl-full" />
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 stagger-animation">
+        {/* Income */}
+        <Card className="card-hover">
           <CardContent className="pt-5">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-slate-500">{t.dashboard.income}</p>
-                <p className="text-2xl font-bold text-emerald-600 mt-1">
+            <div className="flex items-start justify-between">
+              <div className="flex-1 min-w-0">
+                <p className="text-[12.5px] font-medium text-[#9a9a98]">{t.dashboard.income}</p>
+                <p className="text-[26px] font-bold tabular-nums text-[#15803d] mt-1 leading-none">
                   {formatCurrency(stats?.totalIncome || 0)}
                 </p>
               </div>
-              <div className="w-12 h-12 rounded-xl bg-emerald-100 flex items-center justify-center">
-                <ArrowUpRight className="h-6 w-6 text-emerald-600" />
+              <div className="icon-soft w-11 h-11 shrink-0 bg-[#ecfdf5] rounded-[12px] flex items-center justify-center">
+                <ArrowUpRight className="h-[18px] w-[18px] text-[#047857]" strokeWidth={1.8} />
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-red-500/10 to-transparent rounded-bl-full" />
+        {/* Expenses */}
+        <Card className="card-hover">
           <CardContent className="pt-5">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-slate-500">{t.dashboard.expenses}</p>
-                <p className="text-2xl font-bold text-red-600 mt-1">
+            <div className="flex items-start justify-between">
+              <div className="flex-1 min-w-0">
+                <p className="text-[12.5px] font-medium text-[#9a9a98]">{t.dashboard.expenses}</p>
+                <p className="text-[26px] font-bold tabular-nums text-[#be123c] mt-1 leading-none">
                   {formatCurrency(Math.abs(stats?.totalExpenses || 0))}
                 </p>
               </div>
-              <div className="w-12 h-12 rounded-xl bg-red-100 flex items-center justify-center">
-                <ArrowDownRight className="h-6 w-6 text-red-600" />
+              <div className="icon-soft w-11 h-11 shrink-0 bg-[#fef2f2] rounded-[12px] flex items-center justify-center">
+                <ArrowDownRight className="h-[18px] w-[18px] text-[#be123c]" strokeWidth={1.8} />
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="relative overflow-hidden">
-          <div className={cn(
-            "absolute top-0 right-0 w-32 h-32 rounded-bl-full",
-            balance >= 0 ? "bg-gradient-to-br from-blue-500/10 to-transparent" : "bg-gradient-to-br from-orange-500/10 to-transparent"
-          )} />
+        {/* Balance */}
+        <Card className="card-hover">
           <CardContent className="pt-5">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-slate-500">{t.dashboard.balance}</p>
+            <div className="flex items-start justify-between">
+              <div className="flex-1 min-w-0">
+                <p className="text-[12.5px] font-medium text-[#9a9a98]">{t.dashboard.balance}</p>
                 <p className={cn(
-                  "text-2xl font-bold mt-1",
-                  balance >= 0 ? "text-blue-600" : "text-orange-600"
+                  "text-[26px] font-bold tabular-nums mt-1 leading-none",
+                  balance >= 0 ? "text-[#2563eb]" : "text-[#b45309]"
                 )}>
                   {formatCurrency(balance)}
                 </p>
               </div>
               <div className={cn(
-                "w-12 h-12 rounded-xl flex items-center justify-center",
-                balance >= 0 ? "bg-blue-100" : "bg-orange-100"
+                "icon-soft w-11 h-11 shrink-0 rounded-[12px] flex items-center justify-center",
+                balance >= 0 ? "bg-[#eff6ff]" : "bg-[#fffbeb]"
               )}>
-                <Wallet className={cn("h-6 w-6", balance >= 0 ? "text-blue-600" : "text-orange-600")} />
+                <Wallet className={cn(
+                  "h-[18px] w-[18px]",
+                  balance >= 0 ? "text-[#2563eb]" : "text-[#b45309]"
+                )} strokeWidth={1.8} />
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-violet-500/10 to-transparent rounded-bl-full" />
+        {/* Transactions */}
+        <Card className="card-hover">
           <CardContent className="pt-5">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-slate-500">{t.dashboard.transactions}</p>
-                <p className="text-2xl font-bold text-violet-600 mt-1">
+            <div className="flex items-start justify-between">
+              <div className="flex-1 min-w-0">
+                <p className="text-[12.5px] font-medium text-[#9a9a98]">{t.dashboard.transactions}</p>
+                <p className="text-[26px] font-bold tabular-nums text-[#6d28d9] mt-1 leading-none">
                   {stats?.transactionCount || 0}
                 </p>
               </div>
-              <div className="w-12 h-12 rounded-xl bg-violet-100 flex items-center justify-center">
-                <TrendingUp className="h-6 w-6 text-violet-600" />
+              <div className="icon-soft w-11 h-11 shrink-0 bg-[#f3effc] rounded-[12px] flex items-center justify-center">
+                <TrendingUp className="h-[18px] w-[18px] text-[#6d28d9]" strokeWidth={1.8} />
               </div>
             </div>
           </CardContent>
@@ -225,7 +222,7 @@ export function DashboardPage() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <TrendingUp className="h-5 w-5 text-slate-400" />
+              <TrendingUp className="h-[16px] w-[16px] text-[#9a9a98]" strokeWidth={1.8} />
               {t.dashboard.dailyTrend}
             </CardTitle>
           </CardHeader>
@@ -233,21 +230,22 @@ export function DashboardPage() {
             {stats?.dailyTrend && stats.dailyTrend.length > 0 ? (
               <ResponsiveContainer width="100%" height={300}>
                 <LineChart data={stats.dailyTrend}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                  <CartesianGrid strokeDasharray="3 3" stroke="#ebe9e3" />
                   <XAxis
                     dataKey="date"
                     tickFormatter={(value) => format(new Date(value), 'dd.MM')}
-                    stroke="#94a3b8"
-                    fontSize={12}
+                    stroke="#9a9a98"
+                    fontSize={11}
                   />
-                  <YAxis stroke="#94a3b8" fontSize={12} />
+                  <YAxis stroke="#9a9a98" fontSize={11} />
                   <Tooltip
                     labelFormatter={(value) => format(new Date(value), 'dd.MM.yyyy')}
                     formatter={(value) => formatCurrency(value as number)}
                     contentStyle={{
-                      borderRadius: '8px',
-                      border: '1px solid #e2e8f0',
-                      boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
+                      borderRadius: '12px',
+                      border: '1px solid #ebe9e3',
+                      boxShadow: '0 4px 16px rgba(0,0,0,0.08)',
+                      fontSize: '12px',
                     }}
                   />
                   <Legend />
@@ -255,22 +253,22 @@ export function DashboardPage() {
                     type="monotone"
                     dataKey="income"
                     name={t.dashboard.income}
-                    stroke="#10b981"
+                    stroke="#15803d"
                     strokeWidth={2}
-                    dot={{ fill: '#10b981', strokeWidth: 2 }}
+                    dot={{ fill: '#15803d', strokeWidth: 2 }}
                   />
                   <Line
                     type="monotone"
                     dataKey="expenses"
                     name={t.dashboard.expenses}
-                    stroke="#ef4444"
+                    stroke="#be123c"
                     strokeWidth={2}
-                    dot={{ fill: '#ef4444', strokeWidth: 2 }}
+                    dot={{ fill: '#be123c', strokeWidth: 2 }}
                   />
                 </LineChart>
               </ResponsiveContainer>
             ) : (
-              <div className="h-[300px] flex items-center justify-center text-slate-400">
+              <div className="h-[300px] flex items-center justify-center text-[#9a9a98] text-[13.5px]">
                 {t.dashboard.noData}
               </div>
             )}
@@ -281,7 +279,7 @@ export function DashboardPage() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <BarChart3 className="h-5 w-5 text-slate-400" />
+              <BarChart3 className="h-[16px] w-[16px] text-[#9a9a98]" strokeWidth={1.8} />
               {t.dashboard.expensesByCategory}
             </CardTitle>
           </CardHeader>
@@ -306,17 +304,27 @@ export function DashboardPage() {
                       />
                     ))}
                   </Pie>
-                  <Tooltip formatter={(value) => formatCurrency(value as number)} />
+                  <Tooltip
+                    formatter={(value) => formatCurrency(value as number)}
+                    contentStyle={{
+                      borderRadius: '12px',
+                      border: '1px solid #ebe9e3',
+                      boxShadow: '0 4px 16px rgba(0,0,0,0.08)',
+                      fontSize: '12px',
+                    }}
+                  />
                   <Legend
                     layout="vertical"
                     align="right"
                     verticalAlign="middle"
-                    formatter={(value) => <span className="text-sm text-slate-600">{value}</span>}
+                    formatter={(value) => (
+                      <span className="text-[12px] text-[#6b6b6b]">{value}</span>
+                    )}
                   />
                 </PieChart>
               </ResponsiveContainer>
             ) : (
-              <div className="h-[300px] flex items-center justify-center text-slate-400">
+              <div className="h-[300px] flex items-center justify-center text-[#9a9a98] text-[13.5px]">
                 {t.dashboard.noData}
               </div>
             )}
@@ -340,18 +348,30 @@ export function DashboardPage() {
                 layout="vertical"
                 margin={{ left: 100, right: 20 }}
               >
-                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" horizontal={false} />
-                <XAxis type="number" tickFormatter={(value) => formatCurrency(value)} stroke="#94a3b8" fontSize={12} />
-                <YAxis type="category" dataKey="categoryName" width={90} stroke="#94a3b8" fontSize={12} />
+                <CartesianGrid strokeDasharray="3 3" stroke="#ebe9e3" horizontal={false} />
+                <XAxis
+                  type="number"
+                  tickFormatter={(value) => formatCurrency(value)}
+                  stroke="#9a9a98"
+                  fontSize={11}
+                />
+                <YAxis
+                  type="category"
+                  dataKey="categoryName"
+                  width={90}
+                  stroke="#9a9a98"
+                  fontSize={11}
+                />
                 <Tooltip
                   formatter={(value) => formatCurrency(value as number)}
                   contentStyle={{
-                    borderRadius: '8px',
-                    border: '1px solid #e2e8f0',
-                    boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
+                    borderRadius: '12px',
+                    border: '1px solid #ebe9e3',
+                    boxShadow: '0 4px 16px rgba(0,0,0,0.08)',
+                    fontSize: '12px',
                   }}
                 />
-                <Bar dataKey="total" name={t.reports.amount} radius={[0, 4, 4, 0]}>
+                <Bar dataKey="total" name={t.reports.amount} radius={[0, 6, 6, 0]}>
                   {expenseCategories.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={entry.color || COLORS[index % COLORS.length]} />
                   ))}
@@ -453,52 +473,54 @@ function QuickTransactionModal({
       size="md"
     >
       <form onSubmit={handleSubmit} className="space-y-4">
-        {/* Transaction Type Toggle */}
-        <div className="flex gap-2 p-1 bg-slate-100 rounded-xl">
+        {/* Transaction Type Toggle — segmented control */}
+        <div className="flex p-1 bg-[#faf9f5] border border-[#ebe9e3] rounded-full gap-1">
           <button
             type="button"
             className={cn(
-              "flex-1 py-2.5 px-4 rounded-lg font-medium text-sm transition-all",
+              "flex-1 py-2 px-4 rounded-full text-[13px] font-medium transition-all duration-150 flex items-center justify-center gap-1.5",
               transactionType === 'expense'
-                ? "bg-white text-red-600 shadow-sm"
-                : "text-slate-600 hover:text-slate-900"
+                ? "bg-white text-[#be123c] shadow-[0_1px_4px_rgba(0,0,0,0.08)]"
+                : "text-[#6b6b6b] hover:text-[#0a0a0a]"
             )}
             onClick={() => {
               setTransactionType('expense')
               setFormData({ ...formData, categoryId: '' })
             }}
           >
-            <ArrowDownRight className="h-4 w-4 inline mr-1.5" />
+            <ArrowDownRight className="h-[14px] w-[14px]" strokeWidth={1.8} />
             {t.quickTransaction.expense}
           </button>
           <button
             type="button"
             className={cn(
-              "flex-1 py-2.5 px-4 rounded-lg font-medium text-sm transition-all",
+              "flex-1 py-2 px-4 rounded-full text-[13px] font-medium transition-all duration-150 flex items-center justify-center gap-1.5",
               transactionType === 'income'
-                ? "bg-white text-emerald-600 shadow-sm"
-                : "text-slate-600 hover:text-slate-900"
+                ? "bg-white text-[#15803d] shadow-[0_1px_4px_rgba(0,0,0,0.08)]"
+                : "text-[#6b6b6b] hover:text-[#0a0a0a]"
             )}
             onClick={() => {
               setTransactionType('income')
               setFormData({ ...formData, categoryId: '' })
             }}
           >
-            <ArrowUpRight className="h-4 w-4 inline mr-1.5" />
+            <ArrowUpRight className="h-[14px] w-[14px]" strokeWidth={1.8} />
             {t.quickTransaction.income}
           </button>
         </div>
 
         {/* Amount */}
         <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1.5">{t.quickTransaction.amount}</label>
+          <label className="block text-[12.5px] font-medium text-[#6b6b6b] mb-1.5">
+            {t.quickTransaction.amount}
+          </label>
           <Input
             type="number"
             step="0.01"
             min="0"
             className={cn(
-              "text-2xl font-bold h-14 text-center",
-              transactionType === 'expense' ? "text-red-600" : "text-emerald-600"
+              "text-2xl font-bold h-14 text-center tabular-nums",
+              transactionType === 'expense' ? "text-[#be123c]" : "text-[#15803d]"
             )}
             value={formData.amount}
             onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
@@ -510,14 +532,18 @@ function QuickTransactionModal({
         {/* Date & Category */}
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1.5">{t.quickTransaction.date}</label>
+            <label className="block text-[12.5px] font-medium text-[#6b6b6b] mb-1.5">
+              {t.quickTransaction.date}
+            </label>
             <DatePicker
               value={formData.date}
               onChange={(value) => setFormData({ ...formData, date: value })}
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1.5">{t.quickTransaction.category}</label>
+            <label className="block text-[12.5px] font-medium text-[#6b6b6b] mb-1.5">
+              {t.quickTransaction.category}
+            </label>
             <Dropdown
               value={formData.categoryId}
               onChange={(value) => setFormData({ ...formData, categoryId: value })}
@@ -530,7 +556,9 @@ function QuickTransactionModal({
         {/* Payment Method & Description */}
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1.5">{t.quickTransaction.paymentMethod}</label>
+            <label className="block text-[12.5px] font-medium text-[#6b6b6b] mb-1.5">
+              {t.quickTransaction.paymentMethod}
+            </label>
             <Dropdown
               value={formData.paymentMethodId}
               onChange={(value) => setFormData({ ...formData, paymentMethodId: value })}
@@ -539,7 +567,9 @@ function QuickTransactionModal({
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1.5">{t.quickTransaction.description}</label>
+            <label className="block text-[12.5px] font-medium text-[#6b6b6b] mb-1.5">
+              {t.quickTransaction.description}
+            </label>
             <Input
               value={formData.service}
               onChange={(e) => setFormData({ ...formData, service: e.target.value })}
@@ -556,40 +586,37 @@ function QuickTransactionModal({
               type="checkbox"
               checked={formData.hasReceipt}
               onChange={(e) => setFormData({ ...formData, hasReceipt: e.target.checked })}
-              className="h-4 w-4 rounded border-slate-300 text-primary focus:ring-primary"
+              className="h-4 w-4 rounded accent-[#0a0a0a]"
             />
-            <span className="text-sm text-slate-600">{t.quickTransaction.hasReceipt}</span>
+            <span className="text-[13px] text-[#6b6b6b]">{t.quickTransaction.hasReceipt}</span>
           </label>
           <label className="flex items-center gap-2 cursor-pointer">
             <input
               type="checkbox"
               checked={formData.enteredInIiko}
               onChange={(e) => setFormData({ ...formData, enteredInIiko: e.target.checked })}
-              className="h-4 w-4 rounded border-slate-300 text-primary focus:ring-primary"
+              className="h-4 w-4 rounded accent-[#0a0a0a]"
             />
-            <span className="text-sm text-slate-600">{t.quickTransaction.inIiko}</span>
+            <span className="text-[13px] text-[#6b6b6b]">{t.quickTransaction.inIiko}</span>
           </label>
         </div>
 
         {/* Submit Button */}
         <Button
           type="submit"
+          variant={transactionType === 'expense' ? 'destructive' : 'success'}
+          size="lg"
           disabled={isLoading || !formData.amount || !formData.categoryId || !formData.paymentMethodId}
-          className={cn(
-            "w-full h-12 text-base font-semibold",
-            transactionType === 'expense'
-              ? "bg-gradient-to-r from-red-500 to-rose-500 hover:from-red-600 hover:to-rose-600"
-              : "bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600"
-          )}
+          className="w-full text-[14px] font-semibold"
         >
           {isLoading ? (
             <div className="flex items-center gap-2">
-              <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              <div className="w-4 h-4 spinner border-white/30 border-t-white" />
               {t.quickTransaction.saving}
             </div>
           ) : (
             <>
-              <Plus className="h-5 w-5 mr-2" />
+              <Plus className="h-[16px] w-[16px] mr-2" strokeWidth={1.8} />
               {transactionType === 'expense' ? t.quickTransaction.addExpense : t.quickTransaction.addIncome}
             </>
           )}

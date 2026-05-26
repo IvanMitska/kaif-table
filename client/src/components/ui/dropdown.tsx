@@ -36,17 +36,17 @@ export function Dropdown({
   useEffect(() => {
     if (isOpen && triggerRef.current) {
       const rect = triggerRef.current.getBoundingClientRect()
-      const popupHeight = Math.min(options.length * 44 + 12, 300) // approximate height
+      const popupHeight = Math.min(options.length * 40 + 12, 300) // approximate height
       const spaceBelow = window.innerHeight - rect.bottom
       const spaceAbove = rect.top
 
       let top: number
       if (spaceBelow >= popupHeight || spaceBelow >= spaceAbove) {
         // Show below
-        top = rect.bottom + 4
+        top = rect.bottom + 6
       } else {
         // Show above
-        top = rect.top - popupHeight - 4
+        top = rect.top - popupHeight - 6
       }
 
       setPopupPosition({
@@ -95,7 +95,7 @@ export function Dropdown({
         minWidth: Math.max(popupPosition.width, 180),
       }}
     >
-      <div className="rounded-xl border border-slate-200 bg-white py-1.5 shadow-xl shadow-slate-900/10 max-h-[300px] overflow-auto">
+      <div className="scroll-refined rounded-[14px] border border-[#ebe9e3] bg-white p-1.5 shadow-[0_8px_32px_rgba(0,0,0,0.12)] max-h-[300px] overflow-auto">
         {options.map((option) => (
           <button
             key={option.value}
@@ -105,16 +105,16 @@ export function Dropdown({
               setIsOpen(false)
             }}
             className={cn(
-              "flex w-full items-center gap-2 px-3 py-2.5 text-sm transition-colors",
-              "hover:bg-slate-50",
+              "flex w-full items-center gap-2 rounded-[8px] px-2.5 py-2 text-[13px] transition-colors duration-150",
+              "hover:bg-[#faf9f5]",
               option.value === value
-                ? "text-primary font-medium bg-primary/5"
-                : "text-slate-700"
+                ? "text-[#0a0a0a] font-medium bg-[#faf9f5]"
+                : "text-[#6b6b6b]"
             )}
           >
             <span className="w-4 flex-shrink-0">
               {option.value === value && (
-                <Check className="h-4 w-4 text-primary" />
+                <Check className="h-4 w-4 text-[#0a0a0a]" strokeWidth={2} />
               )}
             </span>
             <span>{option.label}</span>
@@ -133,18 +133,20 @@ export function Dropdown({
         onClick={() => !disabled && setIsOpen(!isOpen)}
         disabled={disabled}
         className={cn(
-          "flex h-10 w-full items-center justify-between rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 transition-all",
-          "hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary",
-          disabled && "cursor-not-allowed bg-slate-50 text-slate-400",
-          isOpen && "border-primary ring-2 ring-primary/30"
+          "flex h-10 w-full items-center justify-between rounded-[12px] border border-[#ebe9e3] bg-white px-3 text-[13.5px] text-[#1f1f1f]",
+          "transition-[border-color,box-shadow] duration-150 ease-[cubic-bezier(0.16,1,0.3,1)]",
+          "hover:border-[#e0ddd4] focus:outline-none focus:border-[#0a0a0a] focus:shadow-[0_0_0_3px_rgba(10,10,10,0.06)]",
+          disabled && "cursor-not-allowed bg-[#faf9f5] text-[#9a9a98]",
+          isOpen && "border-[#0a0a0a] shadow-[0_0_0_3px_rgba(10,10,10,0.06)]"
         )}
       >
-        <span className={cn(!selectedOption && "text-slate-400")}>
+        <span className={cn("truncate", !selectedOption && "text-[#9a9a98]")}>
           {selectedOption?.label || placeholder}
         </span>
         <ChevronDown
+          strokeWidth={1.8}
           className={cn(
-            "h-4 w-4 text-slate-400 transition-transform duration-200",
+            "h-4 w-4 flex-shrink-0 text-[#9a9a98] transition-transform duration-200",
             isOpen && "rotate-180"
           )}
         />

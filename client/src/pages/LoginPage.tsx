@@ -1,9 +1,9 @@
 import { LanguageSwitcher } from '@/components/LanguageSwitcher'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { useAuth } from '@/context/AuthContext'
 import { useLanguage } from '@/context/LanguageContext'
+import { AlertCircle } from 'lucide-react'
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
@@ -34,54 +34,48 @@ export function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-violet-50 via-white to-purple-50 p-4">
+    <div className="min-h-screen flex items-center justify-center p-4">
       {/* Language switcher */}
-      <div className="absolute top-4 right-4 z-10">
+      <div className="absolute top-5 right-5 z-10">
         <LanguageSwitcher />
       </div>
 
-      {/* Background decoration */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-40 -right-40 w-96 h-96 bg-gradient-to-br from-violet-400/20 to-purple-500/20 rounded-full blur-3xl" />
-        <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-gradient-to-tr from-purple-400/20 to-violet-500/20 rounded-full blur-3xl" />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-gradient-to-r from-violet-200/30 to-purple-200/30 rounded-full blur-3xl" />
-      </div>
-
-      <Card className="w-full max-w-md relative shadow-2xl border-0 bg-white/80 backdrop-blur-sm">
-        <CardHeader className="text-center pb-2 pt-8">
-          <div className="mx-auto mb-6">
-            <img
-              src="/logo/kaif-logo.jpg"
-              alt="KAIF"
-              className="w-20 h-20 rounded-3xl object-cover shadow-xl shadow-violet-500/20 ring-4 ring-white"
-            />
-          </div>
-          <CardTitle className="text-3xl font-bold bg-gradient-to-r from-violet-600 to-purple-600 bg-clip-text text-transparent">
+      <div className="w-full max-w-[400px] animate-fadeUp">
+        {/* Brand */}
+        <div className="flex flex-col items-center text-center mb-7">
+          <img
+            src="/logo/kaif-logo.jpg"
+            alt="KAIF"
+            className="w-16 h-16 rounded-[18px] object-cover shadow-[0_8px_32px_rgba(0,0,0,0.12)] ring-1 ring-[#ebe9e3]"
+          />
+          <h1 className="mt-5 text-[24px] font-bold tracking-[-0.02em] text-[#0a0a0a]">
             {t.login.title}
-          </CardTitle>
-          <CardDescription className="text-slate-500 mt-2">
-            {t.login.subtitle}
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="pt-6 pb-8 px-8">
-          <form onSubmit={handleSubmit} className="space-y-5">
+          </h1>
+          <p className="mt-1.5 text-[13.5px] text-[#9a9a98]">{t.login.subtitle}</p>
+        </div>
+
+        {/* Card */}
+        <div className="card p-6 sm:p-7">
+          <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">{t.login.email}</label>
+              <label className="block text-[12.5px] font-medium text-[#6b6b6b] mb-1.5">
+                {t.login.email}
+              </label>
               <Input
                 type="email"
                 placeholder="email@example.com"
-                className="h-12 bg-white/70 border-slate-200 rounded-xl focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 transition-all"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">{t.login.password}</label>
+              <label className="block text-[12.5px] font-medium text-[#6b6b6b] mb-1.5">
+                {t.login.password}
+              </label>
               <Input
                 type="password"
                 placeholder="••••••••"
-                className="h-12 bg-white/70 border-slate-200 rounded-xl focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 transition-all"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
@@ -90,28 +84,25 @@ export function LoginPage() {
             </div>
 
             {error && (
-              <div className="p-4 rounded-xl bg-red-50 border border-red-100">
-                <p className="text-sm text-red-600 text-center font-medium">{t.login.error}</p>
+              <div className="flex items-center gap-2 p-3 rounded-[12px] bg-[#fef2f2] border border-[#fee2e2]">
+                <AlertCircle className="h-4 w-4 text-[#be123c] flex-shrink-0" strokeWidth={1.8} />
+                <p className="text-[12.5px] text-[#be123c] font-medium">{t.login.error}</p>
               </div>
             )}
 
-            <Button
-              type="submit"
-              className="w-full h-12 text-base font-semibold rounded-xl bg-gradient-to-r from-violet-500 to-purple-500 hover:from-violet-600 hover:to-purple-600 shadow-lg shadow-violet-500/25 border-0 transition-all"
-              disabled={isLoading}
-            >
+            <Button type="submit" size="lg" className="w-full" disabled={isLoading}>
               {isLoading ? (
-                <div className="flex items-center gap-2">
-                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                <span className="flex items-center gap-2">
+                  <span className="w-4 h-4 spinner !border-white/30 !border-t-white" />
                   {t.login.signingIn}
-                </div>
+                </span>
               ) : (
                 t.login.signIn
               )}
             </Button>
           </form>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   )
 }

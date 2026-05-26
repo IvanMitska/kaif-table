@@ -15,7 +15,6 @@ import {
 import { useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { LanguageSwitcher } from './LanguageSwitcher'
-import { Button } from './ui/button'
 
 interface LayoutProps {
   children: React.ReactNode
@@ -36,71 +35,89 @@ export function Layout({ children }: LayoutProps) {
     { name: t.nav.iiko, href: '/iiko', icon: Store },
   ]
 
+  const pageTitle = navigation.find((n) => n.href === location.pathname)?.name || 'KAIF Finance'
+
   return (
-    <div className="min-h-screen bg-background">
+    <div className="flex h-screen h-dvh overflow-hidden lg:p-3 lg:gap-3">
       {/* Mobile sidebar backdrop */}
       <div
         data-backdrop
         className={cn(
-          "fixed inset-0 z-40 bg-black/50 backdrop-blur-sm lg:hidden",
-          sidebarOpen ? "opacity-100 visible" : "opacity-0 invisible"
+          'fixed inset-0 z-40 bg-[#0a0a0a]/45 lg:hidden',
+          sidebarOpen ? 'opacity-100 visible' : 'opacity-0 invisible'
         )}
-        style={{
-          transition: 'opacity 0.4s ease-out, visibility 0.4s ease-out'
-        }}
+        style={{ transition: 'opacity 0.3s var(--ease), visibility 0.3s var(--ease)' }}
         onClick={() => setSidebarOpen(false)}
       />
 
-      {/* Sidebar */}
+      {/* Sidebar — floating dark panel.
+          On mobile it slides in from the LEFT (drawer convention, matches
+          its desktop position). On lg+ it's a static flex column. */}
       <aside
         data-sidebar
         className={cn(
-          "fixed inset-y-0 z-50 bg-white shadow-2xl lg:shadow-none flex flex-col",
-          "right-0 lg:left-0 lg:right-auto border-l lg:border-l-0 lg:border-r border-border/50",
-          sidebarOpen ? "translate-x-0" : "translate-x-full lg:translate-x-0",
-          sidebarCollapsed ? "lg:w-20" : "lg:w-64",
-          "w-[85vw] max-w-[320px]"
+          'sidebar-dark flex flex-col z-50 flex-shrink-0',
+          'fixed inset-y-0 left-0 w-[84vw] max-w-[296px] lg:relative lg:inset-auto lg:rounded-[24px] lg:max-w-none',
+          sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0',
+          sidebarCollapsed ? 'lg:w-[78px]' : 'lg:w-[248px]'
         )}
         style={{
-          transition: 'transform 0.4s cubic-bezier(0.32, 0.72, 0, 1)',
-          willChange: 'transform'
+          transition: 'transform 0.36s var(--ease-out-quart), width 0.3s var(--ease)',
         }}
       >
-        {/* Logo */}
-        <div className={cn(
-          "h-20 lg:h-16 flex items-center border-b border-border/50 px-4",
-          sidebarCollapsed ? "lg:justify-center" : "justify-between"
-        )}>
-          <Link to="/" className="flex items-center gap-3" onClick={() => setSidebarOpen(false)}>
+        {/* Header */}
+        <div
+          className={cn(
+            'relative h-[68px] flex items-center gap-2 px-3.5 flex-shrink-0 justify-between',
+            sidebarCollapsed && 'lg:justify-center lg:px-0'
+          )}
+        >
+          <Link
+            to="/"
+            className={cn(
+              'flex items-center gap-2.5 min-w-0',
+              sidebarCollapsed && 'lg:hidden'
+            )}
+            onClick={() => setSidebarOpen(false)}
+          >
             <img
               src="/logo/kaif-logo.jpg"
               alt="KAIF"
-              className="w-12 h-12 lg:w-10 lg:h-10 rounded-2xl lg:rounded-xl object-cover shadow-lg"
+              className="w-9 h-9 rounded-[10px] object-cover ring-1 ring-white/10 flex-shrink-0"
             />
-            {!sidebarCollapsed && (
-              <span className="font-bold text-2xl lg:text-xl bg-gradient-to-r from-violet-500 to-purple-500 bg-clip-text text-transparent">
-                KAIF
-              </span>
-            )}
+            <span className="font-bold text-[17px] tracking-[-0.01em] text-white">
+              KAIF
+            </span>
           </Link>
+
+          {/* Collapse toggle — desktop only */}
           <button
-            className="lg:hidden w-10 h-10 flex items-center justify-center hover:bg-slate-100 rounded-xl active:scale-95 transition-transform"
+            onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+            className="btn-press hidden lg:flex w-8 h-8 items-center justify-center rounded-[10px] text-white/55 hover:text-white hover:bg-white/8 flex-shrink-0"
+            title={sidebarCollapsed ? 'Развернуть' : 'Свернуть'}
+          >
+            <ChevronLeft
+              className={cn('h-[18px] w-[18px] transition-transform duration-300', sidebarCollapsed && 'rotate-180')}
+              strokeWidth={1.8}
+            />
+          </button>
+
+          {/* Close — mobile only */}
+          <button
+            className="btn-press lg:hidden w-9 h-9 flex items-center justify-center rounded-[10px] text-white/60 hover:bg-white/8 flex-shrink-0"
             onClick={() => setSidebarOpen(false)}
           >
-            <X className="h-6 w-6 text-slate-500" />
+            <X className="h-5 w-5" strokeWidth={1.8} />
           </button>
         </div>
 
-        {/* Collapse button - desktop only */}
-        <button
-          onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-          className="hidden lg:flex absolute -right-3 top-20 w-6 h-6 bg-white border border-border rounded-full items-center justify-center shadow-md hover:bg-muted"
-        >
-          <ChevronLeft className={cn("h-4 w-4 transition-transform", sidebarCollapsed && "rotate-180")} />
-        </button>
-
         {/* Navigation */}
-        <nav className="flex-1 p-4 pt-6 space-y-2 lg:space-y-1">
+        <nav className="relative flex-1 px-3 pt-3 space-y-1 overflow-y-auto scroll-refined">
+          {!sidebarCollapsed && (
+            <p className="eyebrow !text-white/35 px-3 pb-1.5 pt-1">
+              {language === 'ru' ? 'Меню' : 'เมนู'}
+            </p>
+          )}
           {navigation.map((item) => {
             const isActive = location.pathname === item.href
             return (
@@ -108,110 +125,109 @@ export function Layout({ children }: LayoutProps) {
                 key={item.name}
                 to={item.href}
                 className={cn(
-                  "flex items-center gap-4 px-5 py-4 lg:py-2.5 rounded-2xl text-base lg:text-sm font-medium transition-all active:scale-[0.98]",
-                  isActive
-                    ? "bg-gradient-to-r from-violet-500 to-purple-500 text-white shadow-lg shadow-purple-500/25"
-                    : "text-slate-600 hover:bg-slate-100 hover:text-slate-900",
-                  sidebarCollapsed && "lg:justify-center lg:px-2"
+                  'nav-item-dark btn-press',
+                  isActive && 'nav-item-dark-active',
+                  sidebarCollapsed && 'lg:justify-center lg:px-0'
                 )}
                 onClick={() => setSidebarOpen(false)}
+                title={sidebarCollapsed ? item.name : undefined}
               >
-                <item.icon className={cn("h-6 w-6 lg:h-5 lg:w-5 flex-shrink-0", isActive && "text-white")} />
-                {!sidebarCollapsed && <span className="lg:block">{item.name}</span>}
+                <item.icon className="nav-icon h-[18px] w-[18px]" strokeWidth={1.8} />
+                {!sidebarCollapsed && <span>{item.name}</span>}
               </Link>
             )
           })}
         </nav>
 
-        {/* Language switcher - mobile only */}
-        <div className="lg:hidden px-4 pb-4">
-          <div className="flex items-center gap-2 p-1 bg-slate-100 rounded-xl">
+        {/* Language switcher — mobile only */}
+        <div className="lg:hidden px-3 pb-3">
+          <div className="flex items-center gap-1 p-1 bg-white/[0.06] rounded-full border border-white/8">
             <button
               onClick={() => setLanguage('ru')}
               className={cn(
-                "flex-1 px-4 py-3 text-sm font-medium rounded-lg transition-all",
+                'btn-press flex-1 flex items-center justify-center gap-1.5 h-9 px-3 text-[13px] font-medium rounded-full transition-colors',
                 language === 'ru'
-                  ? "bg-white text-slate-900 shadow-sm"
-                  : "text-slate-500 hover:text-slate-700"
+                  ? 'bg-white text-[#0a0a0a]'
+                  : 'text-white/55 hover:text-white'
               )}
             >
-              🇷🇺 Русский
+              <span className="text-[13px]">🇷🇺</span> RU
             </button>
             <button
               onClick={() => setLanguage('th')}
               className={cn(
-                "flex-1 px-4 py-3 text-sm font-medium rounded-lg transition-all",
+                'btn-press flex-1 flex items-center justify-center gap-1.5 h-9 px-3 text-[13px] font-medium rounded-full transition-colors',
                 language === 'th'
-                  ? "bg-white text-slate-900 shadow-sm"
-                  : "text-slate-500 hover:text-slate-700"
+                  ? 'bg-white text-[#0a0a0a]'
+                  : 'text-white/55 hover:text-white'
               )}
             >
-              🇹🇭 ไทย
+              <span className="text-[13px]">🇹🇭</span> TH
             </button>
           </div>
         </div>
 
         {/* User section */}
-        <div className={cn(
-          "p-4 border-t border-border/50",
-          sidebarCollapsed && "lg:flex lg:flex-col lg:items-center"
-        )}>
-          <div className={cn(
-            "flex items-center gap-4 p-4 rounded-2xl bg-gradient-to-br from-slate-50 to-slate-100",
-            sidebarCollapsed && "lg:flex-col lg:p-2"
-          )}>
-            <div className="w-12 h-12 lg:w-10 lg:h-10 bg-gradient-to-br from-emerald-400 to-cyan-500 rounded-2xl lg:rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg shadow-emerald-500/20">
-              <span className="text-white font-bold text-lg lg:text-base">
+        <div className="relative p-3 border-t border-white/8">
+          <div
+            className={cn(
+              'flex items-center gap-2.5 p-2 rounded-[14px] bg-white/5',
+              sidebarCollapsed && 'lg:justify-center lg:p-1.5'
+            )}
+          >
+            <div className="w-9 h-9 rounded-[10px] bg-[#dcfa45] flex items-center justify-center flex-shrink-0">
+              <span className="text-[#0a0a0a] font-bold text-[14px]">
                 {user?.name?.charAt(0).toUpperCase()}
               </span>
             </div>
             {!sidebarCollapsed && (
               <div className="flex-1 min-w-0">
-                <p className="text-base lg:text-sm font-semibold truncate">{user?.name}</p>
-                <p className="text-sm lg:text-xs text-slate-500 truncate">{user?.email}</p>
+                <p className="text-[13px] font-semibold text-white truncate">{user?.name}</p>
+                <p className="text-[11px] text-white/45 truncate">{user?.email}</p>
               </div>
             )}
           </div>
-          <Button
-            variant="ghost"
-            className={cn(
-              "w-full mt-3 justify-start text-slate-600 hover:text-red-600 hover:bg-red-50 h-12 lg:h-10 text-base lg:text-sm rounded-xl",
-              sidebarCollapsed && "lg:justify-center"
-            )}
+          <button
             onClick={logout}
+            className={cn(
+              'btn-press mt-2 w-full flex items-center gap-2.5 px-3 h-10 rounded-[12px] text-[13px] font-medium',
+              'text-white/55 hover:text-white hover:bg-white/6',
+              sidebarCollapsed && 'lg:justify-center lg:px-0'
+            )}
+            title={sidebarCollapsed ? t.nav.logout : undefined}
           >
-            <LogOut className="h-5 w-5 lg:h-4 lg:w-4" />
-            {!sidebarCollapsed && <span className="ml-3">{t.nav.logout}</span>}
-          </Button>
+            <LogOut className="h-[18px] w-[18px] flex-shrink-0" strokeWidth={1.8} />
+            {!sidebarCollapsed && <span>{t.nav.logout}</span>}
+          </button>
         </div>
       </aside>
 
-      {/* Main content */}
-      <div className={cn(
-        "transition-all duration-300",
-        sidebarCollapsed ? "lg:pl-20" : "lg:pl-64"
-      )}>
-        {/* Top bar */}
-        <header className="sticky top-0 z-30 h-16 bg-white/80 backdrop-blur-md border-b border-border/50 flex items-center justify-between px-4 lg:px-6">
-          <h1 className="text-lg font-semibold text-slate-900">
-            {navigation.find(n => n.href === location.pathname)?.name || 'KAIF Finance'}
-          </h1>
-          <div className="flex items-center gap-2">
-            <div className="hidden lg:block">
-              <LanguageSwitcher />
-            </div>
+      {/* Main column */}
+      <div className="flex-1 flex flex-col min-w-0 h-full">
+        {/* Top bar — on mobile a flush bar with only a bottom hairline,
+            on lg+ a glass card matching the floating sidebar. */}
+        <header className="flex-shrink-0 h-[60px] lg:h-[58px] flex items-center justify-between px-4 lg:px-5 bg-white/[0.82] border-b border-[#ebe9e3] lg:border lg:border-[#ebe9e3] lg:rounded-[18px]">
+          <div className="flex items-center gap-3 min-w-0">
             <button
-              className="lg:hidden w-10 h-10 flex items-center justify-center hover:bg-slate-100 rounded-xl active:scale-95 transition-transform"
+              className="btn-press lg:hidden w-9 h-9 flex items-center justify-center rounded-[10px] text-[#6b6b6b] hover:bg-[#faf9f5]"
               onClick={() => setSidebarOpen(true)}
             >
-              <Menu className="h-6 w-6 text-slate-600" />
+              <Menu className="h-5 w-5" strokeWidth={1.8} />
             </button>
+            <h1 className="text-[16px] font-semibold tracking-[-0.01em] text-[#0a0a0a] truncate">
+              {pageTitle}
+            </h1>
+          </div>
+          <div className="hidden lg:block">
+            <LanguageSwitcher />
           </div>
         </header>
 
         {/* Page content */}
-        <main className="p-4 lg:p-6 animate-fadeIn">
-          {children}
+        <main className="scroll-refined flex-1 overflow-y-auto mt-3 lg:mt-3 px-4 pb-6 lg:px-0 lg:pb-0">
+          <div key={location.pathname} className="page-enter max-w-[1480px] mx-auto">
+            {children}
+          </div>
         </main>
       </div>
     </div>

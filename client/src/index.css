@@ -1,146 +1,683 @@
 @import "tailwindcss";
 
+/* ============================================================
+   KAIF DESIGN SYSTEM — calm UI (Linear / Vercel / Notion / Apple)
+   ============================================================ */
+
 @theme {
-  --color-primary: #4f46e5;
+  /* — Typography — */
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Display',
+    'SF Pro Text', 'Helvetica Neue', sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
+
+  /* — Base palette — */
+  --color-bg: #efeee9;
+  --color-surface: #ffffff;
+  --color-surface-2: #faf9f5;
+  --color-ink: #0a0a0a;
+  --color-ink-soft: #1f1f1f;
+  --color-ink-muted: #6b6b6b;
+  --color-ink-subtle: #9a9a98;
+
+  /* — Accents — */
+  --color-accent: #6d28d9;
+  --color-accent-soft: #f3effc;
+  --color-lime: #dcfa45;
+  --color-lime-deep: #b8d92e;
+
+  /* — Dark sidebar — */
+  --color-dark-sidebar: #0e0e10;
+  --color-dark-sidebar-2: #1a1a1d;
+
+  /* — Semantic (legacy aliases kept for existing markup) — */
+  --color-primary: #0a0a0a;
   --color-primary-foreground: #ffffff;
-  --color-secondary: #f8fafc;
-  --color-secondary-foreground: #1e293b;
-  --color-destructive: #dc2626;
-  --color-destructive-foreground: #ffffff;
-  --color-muted: #f1f5f9;
-  --color-muted-foreground: #64748b;
-  --color-accent: #f1f5f9;
-  --color-accent-foreground: #1e293b;
-  --color-background: #f8fafc;
-  --color-foreground: #0f172a;
+  --color-background: #efeee9;
+  --color-foreground: #1f1f1f;
   --color-card: #ffffff;
-  --color-card-foreground: #0f172a;
-  --color-popover: #ffffff;
-  --color-popover-foreground: #0f172a;
-  --color-border: #e2e8f0;
-  --color-input: #e2e8f0;
-  --color-ring: #4f46e5;
-  --color-success: #10b981;
-  --color-warning: #f59e0b;
-  --color-danger: #ef4444;
-  --radius-sm: 0.375rem;
-  --radius-md: 0.5rem;
-  --radius-lg: 0.75rem;
-  --radius-xl: 1rem;
-  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --color-border: #ebe9e3;
+  --color-ring: #0a0a0a;
+  --color-muted: #faf9f5;
+  --color-muted-foreground: #6b6b6b;
+  --color-success: #15803d;
+  --color-warning: #b45309;
+  --color-danger: #dc2626;
+
+  /* — Radii — */
+  --radius-sm: 5px;
+  --radius-md: 10px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-2xl: 20px;
+  --radius-3xl: 24px;
+
+  /* — Shadows — */
+  --shadow-soft: 0 2px 8px rgba(0, 0, 0, 0.06);
+  --shadow-medium: 0 4px 16px rgba(0, 0, 0, 0.08);
+  --shadow-large: 0 8px 32px rgba(0, 0, 0, 0.12);
+  --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.06);
+  --shadow-elevated: 0 4px 16px -8px rgba(10, 10, 10, 0.08),
+    0 2px 4px -2px rgba(10, 10, 10, 0.04);
+  --shadow-card-hover: 0 6px 20px -8px rgba(10, 10, 10, 0.1),
+    0 2px 6px -2px rgba(10, 10, 10, 0.06);
 }
+
+/* — Easing & duration tokens — */
+:root {
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
+  --ease-spring: cubic-bezier(0.34, 1.32, 0.64, 1);
+  --ease-soft: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* ============================================================
+   BASE
+   ============================================================ */
 
 * {
   border-color: var(--color-border);
 }
 
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
 body {
   margin: 0;
-  background-color: var(--color-background);
-  color: var(--color-foreground);
-  font-family: var(--font-sans);
   min-height: 100vh;
+  color: var(--color-ink-soft);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 400;
+  letter-spacing: -0.005em;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  font-feature-settings: 'cv11', 'ss01';
+  background-color: var(--color-bg);
+  /* ambient layer */
+  background-image:
+    radial-gradient(circle at 12% 8%, rgba(109, 40, 217, 0.05), transparent 42%),
+    radial-gradient(circle at 88% 6%, rgba(220, 250, 69, 0.06), transparent 38%),
+    radial-gradient(circle at 70% 96%, rgba(109, 40, 217, 0.04), transparent 45%);
+  background-attachment: fixed;
 }
 
 #root {
   min-height: 100vh;
 }
 
-/* Custom scrollbar */
+/* — Scrollbar — */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 8px;
+  height: 8px;
 }
-
 ::-webkit-scrollbar-track {
   background: transparent;
 }
-
 ::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
-  border-radius: 3px;
+  background: rgba(10, 10, 10, 0.14);
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
 }
-
 ::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
+  background: rgba(10, 10, 10, 0.26);
+  background-clip: padding-box;
 }
 
-/* Smooth transitions - exclude sidebar and backdrop for custom animation */
-*:not([data-sidebar]):not([data-backdrop]) {
-  transition-property: background-color, border-color, color, fill, stroke, opacity, box-shadow;
-  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-  transition-duration: 150ms;
+.scroll-refined {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(10, 10, 10, 0.14) transparent;
 }
 
-/* Focus styles */
+/* — Focus — */
 :focus-visible {
-  outline: 2px solid var(--color-primary);
+  outline: 2px solid var(--color-ink);
   outline-offset: 2px;
+  border-radius: 4px;
 }
 
-/* Table styles */
+/* — Tables — */
 table {
   border-collapse: separate;
   border-spacing: 0;
 }
 
-/* Input date picker */
-input[type="date"] {
+input[type='date'] {
   color-scheme: light;
 }
 
-/* Prevent iOS Safari auto-zoom on input focus */
+/* — Numeric — */
+.num-roll,
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+/* — Eyebrow — */
+.eyebrow {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--color-ink-subtle);
+}
+
+/* Prevent iOS auto-zoom */
 @media screen and (max-width: 768px) {
   input,
-  input[type="text"],
-  input[type="password"],
-  input[type="email"],
-  input[type="number"],
-  input[type="tel"],
-  input[type="url"],
-  input[type="search"],
-  input[type="date"],
   textarea,
   select {
     font-size: 16px !important;
   }
 }
 
-/* Animation keyframes */
+/* ============================================================
+   KEYFRAMES
+   ============================================================ */
+
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(-10px); }
-  to { opacity: 1; transform: translateY(0); }
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+/* IMPORTANT: animations end with `transform: none` rather than identity transforms
+   like `translate3d(0,0,0)` or `scale(1)`. A non-`none` transform — even an
+   identity one — creates a containing block for `position: fixed` descendants
+   and would clip portals/modals to that ancestor instead of the viewport. */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translate3d(0, 10px, 0); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes pageEnter {
+  from { opacity: 0; transform: translate3d(0, 8px, 0); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes modalOverlay {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes modalPop {
+  from { opacity: 0; transform: scale(0.96); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes popoverIn {
+  from { opacity: 0; transform: translate3d(0, -6px, 0) scale(0.98); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes pickPop {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.035); }
+  100% { transform: scale(1); }
+}
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+@keyframes pulseDot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+@keyframes breathe {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.06); }
+}
+@keyframes shimmerSlide {
+  from { transform: translate3d(-100%, 0, 0); }
+  to { transform: translate3d(100%, 0, 0); }
+}
+@keyframes sparkGrow {
+  from { transform: scaleY(0); }
+  to { transform: scaleY(1); }
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
 
-@keyframes slideIn {
-  from { opacity: 0; transform: translateX(-10px); }
-  to { opacity: 1; transform: translateX(0); }
+.animate-fadeIn { animation: fadeIn 0.3s var(--ease); }
+.animate-fadeUp { animation: fadeUp 0.35s var(--ease) both; }
+.animate-dropdownIn { animation: popoverIn 0.22s var(--ease) both; }
+.animate-scaleIn { animation: modalPop 0.28s var(--ease-spring) both; }
+.animate-slideIn { animation: fadeUp 0.3s var(--ease) both; }
+
+/* Page enter */
+.page-enter {
+  animation: pageEnter 0.36s var(--ease-out-quart) both;
 }
 
-@keyframes dropdownIn {
-  from { opacity: 0; transform: translateY(-8px) scale(0.95); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
+/* Stagger lists */
+.stagger-animation > * {
+  animation: fadeUp 0.35s var(--ease) both;
+}
+.stagger-animation > *:nth-child(1) { animation-delay: 0.05s; }
+.stagger-animation > *:nth-child(2) { animation-delay: 0.1s; }
+.stagger-animation > *:nth-child(3) { animation-delay: 0.15s; }
+.stagger-animation > *:nth-child(4) { animation-delay: 0.2s; }
+.stagger-animation > *:nth-child(5) { animation-delay: 0.25s; }
+.stagger-animation > *:nth-child(6) { animation-delay: 0.3s; }
+.stagger-animation > *:nth-child(7) { animation-delay: 0.35s; }
+.stagger-animation > *:nth-child(8) { animation-delay: 0.4s; }
+.stagger-animation > *:nth-child(9) { animation-delay: 0.45s; }
+.stagger-animation > *:nth-child(10) { animation-delay: 0.5s; }
+.stagger-animation > *:nth-child(11) { animation-delay: 0.55s; }
+.stagger-animation > *:nth-child(12) { animation-delay: 0.6s; }
+.stagger-animation > *:nth-child(13) { animation-delay: 0.65s; }
+.stagger-animation > *:nth-child(n + 14) { animation-delay: 0.7s; }
+
+/* ============================================================
+   SURFACES
+   ============================================================ */
+
+.surface {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-2xl);
+}
+.surface-2 {
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+}
+.surface-elevated {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-elevated);
 }
 
-@keyframes scaleIn {
-  from { opacity: 0; transform: scale(0.95); }
-  to { opacity: 1; transform: scale(1); }
+.card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-2xl);
+  box-shadow: var(--shadow-card);
+}
+.card-hover {
+  transition: transform 0.22s var(--ease), box-shadow 0.22s var(--ease),
+    border-color 0.22s var(--ease);
+}
+.card-hover:hover {
+  transform: translate3d(0, -2px, 0);
+  box-shadow: var(--shadow-card-hover);
+  border-color: #e0ddd4;
 }
 
-.animate-fadeIn {
-  animation: fadeIn 0.3s ease-out;
+.glass {
+  background: rgba(255, 255, 255, 0.82);
+  border: 1px solid var(--color-border);
+}
+.glass-strong {
+  background: rgba(255, 255, 255, 0.94);
+  border: 1px solid var(--color-border);
 }
 
-.animate-slideIn {
-  animation: slideIn 0.3s ease-out;
+.divider {
+  height: 1px;
+  background: var(--color-border);
 }
 
-.animate-dropdownIn {
-  animation: dropdownIn 0.2s ease-out;
+/* — Dark surfaces —
+   NOTE: `.sidebar-dark` intentionally does NOT set `position`. The aside
+   needs to be `fixed` on mobile (drawer) and `relative` on desktop (flex
+   column), so the position is controlled from the JSX via Tailwind utilities.
+   Setting `position: relative` here would override `fixed` on mobile due to
+   CSS source order, collapsing the layout. */
+.sidebar-dark {
+  background: var(--color-dark-sidebar);
+  color: rgba(255, 255, 255, 0.72);
+  overflow: hidden;
+}
+.card-dark {
+  position: relative;
+  background: var(--color-dark-sidebar);
+  color: rgba(255, 255, 255, 0.72);
+  overflow: hidden;
+}
+.sidebar-dark::before,
+.card-dark::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 80% 0%, rgba(109, 40, 217, 0.22), transparent 55%),
+    radial-gradient(circle at 10% 100%, rgba(220, 250, 69, 0.08), transparent 50%);
+  pointer-events: none;
 }
 
-.animate-scaleIn {
-  animation: scaleIn 0.2s ease-out;
+/* ============================================================
+   NAVIGATION
+   ============================================================ */
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 9px 14px;
+  border-radius: var(--radius-md);
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--color-ink-muted);
+  transition: background-color 0.16s var(--ease), color 0.16s var(--ease);
+}
+.nav-item:hover {
+  background: var(--color-surface-2);
+  color: var(--color-ink);
+}
+.nav-item-active {
+  background: var(--color-ink);
+  color: #fff;
+}
+.nav-item-active:hover {
+  background: var(--color-ink);
+  color: #fff;
+}
+
+.nav-item-dark {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 9px 14px;
+  border-radius: var(--radius-md);
+  font-size: 13.5px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.6);
+  transition: background-color 0.16s var(--ease), color 0.16s var(--ease);
+}
+.nav-item-dark:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: #fff;
+}
+.nav-item-dark:hover .nav-icon {
+  transform: translateX(1px);
+}
+.nav-item-dark-active {
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+}
+.nav-item-dark-active::before {
+  content: '';
+  position: absolute;
+  left: -12px; /* flush to sidebar edge — equals the nav's px-3 padding */
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 18px;
+  border-radius: 0 999px 999px 0;
+  background: var(--color-lime);
+  box-shadow: 0 0 10px rgba(220, 250, 69, 0.45);
+}
+.nav-icon {
+  flex-shrink: 0;
+  transition: transform 0.16s var(--ease);
+}
+
+/* ============================================================
+   ICON CONTAINERS
+   ============================================================ */
+
+.icon-soft {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-lg);
+}
+
+/* ============================================================
+   BUTTONS  (utility helpers for handcrafted buttons)
+   ============================================================ */
+
+.btn-press {
+  transition: transform 0.12s var(--ease), background-color 0.16s var(--ease),
+    border-color 0.16s var(--ease), color 0.16s var(--ease),
+    box-shadow 0.16s var(--ease);
+}
+.btn-press:active {
+  transform: scale(0.97);
+}
+
+/* ============================================================
+   INPUTS
+   ============================================================ */
+
+.input {
+  height: 40px;
+  width: 100%;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  padding: 0 12px;
+  font-size: 13.5px;
+  color: var(--color-ink-soft);
+  transition: border-color 0.16s var(--ease), box-shadow 0.16s var(--ease);
+}
+.input::placeholder {
+  color: var(--color-ink-subtle);
+}
+.input:focus {
+  outline: none;
+  border-color: var(--color-ink);
+  box-shadow: 0 0 0 3px rgba(10, 10, 10, 0.06);
+}
+
+/* — Segment control — */
+.segment {
+  display: inline-flex;
+  padding: 3px;
+  gap: 2px;
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+}
+.segment-item {
+  position: relative;
+  z-index: 1;
+  padding: 6px 14px;
+  font-size: 13px;
+  font-weight: 500;
+  border-radius: 999px;
+  color: var(--color-ink-muted);
+  transition: color 0.16s var(--ease);
+  cursor: pointer;
+}
+.segment-item-active {
+  color: #fff;
+}
+
+/* ============================================================
+   STATUS PILLS / BADGES
+   ============================================================ */
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 9px;
+  font-size: 11px;
+  font-weight: 500;
+  border-radius: 999px;
+  border: 1px solid transparent;
+}
+
+/* ============================================================
+   STATES — skeletons / empty
+   ============================================================ */
+
+.shimmer-line {
+  position: relative;
+  overflow: hidden;
+  background: var(--color-surface-2);
+  border-radius: var(--radius-md);
+}
+.shimmer-line::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.7),
+    transparent
+  );
+  animation: shimmerSlide 1.4s infinite;
+}
+
+.breathe {
+  animation: breathe 3s ease-in-out infinite;
+}
+
+.pulse-dot {
+  animation: pulseDot 1.8s ease-in-out infinite;
+}
+
+/* — Status left stripe — */
+.stripe-l {
+  position: relative;
+}
+.stripe-l::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  border-radius: 999px;
+}
+
+/* — Spinner — */
+.spinner {
+  border-radius: 999px;
+  border: 2px solid rgba(10, 10, 10, 0.12);
+  border-top-color: var(--color-ink);
+  animation: spin 0.7s linear infinite;
+}
+
+/* ============================================================
+   TYPOGRAPHY HELPERS
+   ============================================================ */
+
+.page-title {
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--color-ink);
+  line-height: 1.15;
+}
+.page-subtitle {
+  margin-top: 2px;
+  font-size: 13.5px;
+  color: var(--color-ink-subtle);
+}
+.section-title {
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  color: var(--color-ink);
+}
+
+.stat-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-ink-subtle);
+  letter-spacing: 0.01em;
+}
+.stat-value {
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+  color: var(--color-ink);
+}
+
+/* ============================================================
+   COMPACT ICON ACTION BUTTON (table row edit/delete etc.)
+   ============================================================ */
+
+.action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  color: var(--color-ink-muted);
+  transition: background-color 0.15s var(--ease), color 0.15s var(--ease),
+    transform 0.12s var(--ease);
+}
+.action-btn:hover {
+  background: var(--color-surface-2);
+  color: var(--color-ink);
+}
+.action-btn:active {
+  transform: scale(0.94);
+}
+.action-btn-danger:hover {
+  background: #fef2f2;
+  color: #be123c;
+}
+
+/* ============================================================
+   ALERT / BANNER
+   ============================================================ */
+
+.alert {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid transparent;
+  font-size: 13px;
+}
+.alert-success {
+  background: #ecfdf5;
+  color: #15803d;
+  border-color: #d1fae5;
+}
+.alert-danger {
+  background: #fef2f2;
+  color: #be123c;
+  border-color: #fee2e2;
+}
+.alert-warning {
+  background: #fffbeb;
+  color: #b45309;
+  border-color: #fef3c7;
+}
+.alert-info {
+  background: #eff6ff;
+  color: #2563eb;
+  border-color: #dbeafe;
+}
+
+/* ============================================================
+   KBD
+   ============================================================ */
+
+kbd,
+.kbd {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 6px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--color-ink-muted);
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-border);
+  border-radius: 5px;
+  line-height: 1;
+}
+
+/* ============================================================
+   REDUCED MOTION
+   ============================================================ */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

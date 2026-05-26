@@ -29,7 +29,18 @@ import {
   YAxis,
 } from 'recharts'
 
-const COLORS = ['#4f46e5', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16', '#f97316', '#14b8a6']
+const COLORS = [
+  '#6d28d9',
+  '#2563eb',
+  '#047857',
+  '#b45309',
+  '#be123c',
+  '#0891b2',
+  '#7c3aed',
+  '#b8d92e',
+  '#db2777',
+  '#475569',
+]
 
 export function ReportsPage() {
   const { t } = useLanguage()
@@ -75,33 +86,32 @@ export function ReportsPage() {
   const incomeCategories = stats?.byCategory?.filter(c => c.total > 0) || []
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 page-enter">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-slate-900">{t.reports.title}</h2>
-          <p className="text-slate-500 mt-1">{t.reports.subtitle}</p>
+          <h2 className="page-title">{t.reports.title}</h2>
+          <p className="page-subtitle">{t.reports.subtitle}</p>
         </div>
       </div>
 
-      {/* Date Range & Export */}
-      <Card className="relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-to-br from-indigo-500/5 to-transparent rounded-bl-full" />
-        <CardContent className="pt-6">
+      {/* Date Range & Export controls */}
+      <Card>
+        <CardContent className="pt-5">
           <div className="flex flex-col sm:flex-row sm:items-center gap-4">
             {/* Date Range */}
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3">
               <div className="flex items-center gap-2 w-full sm:w-auto">
-                <span className="text-sm text-slate-500 w-8">{t.reports.from}</span>
+                <span className="text-[13px] text-[#9a9a98] w-8 shrink-0">{t.reports.from}</span>
                 <DatePicker
                   value={dateFrom}
                   onChange={setDateFrom}
                   className="flex-1 sm:w-40"
                 />
               </div>
-              <span className="text-slate-300 hidden sm:block">—</span>
+              <span className="text-[#ebe9e3] hidden sm:block select-none">—</span>
               <div className="flex items-center gap-2 w-full sm:w-auto">
-                <span className="text-sm text-slate-500 w-8">{t.reports.to}</span>
+                <span className="text-[13px] text-[#9a9a98] w-8 shrink-0">{t.reports.to}</span>
                 <DatePicker
                   value={dateTo}
                   onChange={setDateTo}
@@ -109,19 +119,20 @@ export function ReportsPage() {
                 />
               </div>
             </div>
+
             <div className="hidden sm:flex flex-1" />
+
             {/* Export Buttons */}
             <div className="flex gap-2">
               <Button
                 variant="outline"
                 onClick={handleExportExcel}
                 disabled={isExporting !== null}
-                className="border-emerald-200 text-emerald-700 hover:bg-emerald-50 hover:border-emerald-300"
               >
                 {isExporting === 'excel' ? (
-                  <div className="w-4 h-4 border-2 border-emerald-300 border-t-emerald-600 rounded-full animate-spin mr-2" />
+                  <div className="w-4 h-4 spinner mr-2" />
                 ) : (
-                  <FileSpreadsheet className="h-4 w-4 mr-2" />
+                  <FileSpreadsheet className="h-4 w-4 mr-2" strokeWidth={1.8} />
                 )}
                 {t.reports.exportExcel}
               </Button>
@@ -129,12 +140,11 @@ export function ReportsPage() {
                 variant="outline"
                 onClick={handleExportPdf}
                 disabled={isExporting !== null}
-                className="border-red-200 text-red-700 hover:bg-red-50 hover:border-red-300"
               >
                 {isExporting === 'pdf' ? (
-                  <div className="w-4 h-4 border-2 border-red-300 border-t-red-600 rounded-full animate-spin mr-2" />
+                  <div className="w-4 h-4 spinner mr-2" />
                 ) : (
-                  <FileText className="h-4 w-4 mr-2" />
+                  <FileText className="h-4 w-4 mr-2" strokeWidth={1.8} />
                 )}
                 {t.reports.exportPdf}
               </Button>
@@ -146,86 +156,86 @@ export function ReportsPage() {
       {isLoading ? (
         <div className="flex items-center justify-center h-64">
           <div className="flex flex-col items-center gap-3">
-            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary"></div>
-            <span className="text-sm text-slate-500">{t.common.loading}</span>
+            <div className="w-8 h-8 spinner" />
+            <span className="text-[13px] text-[#9a9a98]">{t.common.loading}</span>
           </div>
         </div>
       ) : (
         <>
           {/* Summary Cards */}
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            <Card className="relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-emerald-500/10 to-transparent rounded-bl-full" />
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 stagger-animation">
+            {/* Total Income */}
+            <Card>
               <CardContent className="pt-5">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-slate-500">{t.reports.totalIncome}</p>
-                    <p className="text-2xl font-bold text-emerald-600 mt-1">
+                    <p className="eyebrow mb-2">{t.reports.totalIncome}</p>
+                    <p className="text-[26px] font-bold tracking-[-0.03em] tabular-nums text-[#15803d]">
                       {formatCurrency(stats?.totalIncome || 0)}
                     </p>
                   </div>
-                  <div className="w-12 h-12 rounded-xl bg-emerald-100 flex items-center justify-center">
-                    <ArrowUpRight className="h-6 w-6 text-emerald-600" />
+                  <div className="w-11 h-11 rounded-[12px] bg-[#ecfdf5] flex items-center justify-center shrink-0">
+                    <ArrowUpRight className="w-[18px] h-[18px] text-[#047857]" strokeWidth={1.8} />
                   </div>
                 </div>
               </CardContent>
             </Card>
 
-            <Card className="relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-red-500/10 to-transparent rounded-bl-full" />
+            {/* Total Expenses */}
+            <Card>
               <CardContent className="pt-5">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-slate-500">{t.reports.totalExpenses}</p>
-                    <p className="text-2xl font-bold text-red-600 mt-1">
+                    <p className="eyebrow mb-2">{t.reports.totalExpenses}</p>
+                    <p className="text-[26px] font-bold tracking-[-0.03em] tabular-nums text-[#be123c]">
                       {formatCurrency(Math.abs(stats?.totalExpenses || 0))}
                     </p>
                   </div>
-                  <div className="w-12 h-12 rounded-xl bg-red-100 flex items-center justify-center">
-                    <ArrowDownRight className="h-6 w-6 text-red-600" />
+                  <div className="w-11 h-11 rounded-[12px] bg-[#fef2f2] flex items-center justify-center shrink-0">
+                    <ArrowDownRight className="w-[18px] h-[18px] text-[#be123c]" strokeWidth={1.8} />
                   </div>
                 </div>
               </CardContent>
             </Card>
 
-            <Card className="relative overflow-hidden">
-              <div className={cn(
-                "absolute top-0 right-0 w-24 h-24 rounded-bl-full",
-                balance >= 0 ? "bg-gradient-to-br from-blue-500/10 to-transparent" : "bg-gradient-to-br from-orange-500/10 to-transparent"
-              )} />
+            {/* Net Profit */}
+            <Card>
               <CardContent className="pt-5">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-slate-500">{t.reports.netProfit}</p>
+                    <p className="eyebrow mb-2">{t.reports.netProfit}</p>
                     <p className={cn(
-                      "text-2xl font-bold mt-1",
-                      balance >= 0 ? "text-blue-600" : "text-orange-600"
+                      "text-[26px] font-bold tracking-[-0.03em] tabular-nums",
+                      balance >= 0 ? "text-[#2563eb]" : "text-[#b45309]"
                     )}>
                       {formatCurrency(balance)}
                     </p>
                   </div>
                   <div className={cn(
-                    "w-12 h-12 rounded-xl flex items-center justify-center",
-                    balance >= 0 ? "bg-blue-100" : "bg-orange-100"
+                    "w-11 h-11 rounded-[12px] flex items-center justify-center shrink-0",
+                    balance >= 0 ? "bg-[#dbeafe]" : "bg-[#fef3c7]"
                   )}>
-                    <Wallet className={cn("h-6 w-6", balance >= 0 ? "text-blue-600" : "text-orange-600")} />
+                    <Wallet className={cn(
+                      "w-[18px] h-[18px]",
+                      balance >= 0 ? "text-[#2563eb]" : "text-[#b45309]"
+                    )} strokeWidth={1.8} />
                   </div>
                 </div>
               </CardContent>
             </Card>
 
-            <Card className="relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-violet-500/10 to-transparent rounded-bl-full" />
+            {/* Transaction Count */}
+            <Card>
               <CardContent className="pt-5">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-slate-500">{t.reports.transactionCount}</p>
-                    <p className="text-2xl font-bold text-violet-600 mt-1">
+                    <p className="eyebrow mb-2">{t.reports.transactionCount}</p>
+                    <p className="text-[26px] font-bold tracking-[-0.03em] tabular-nums text-[#6d28d9]">
                       {stats?.transactionCount || 0}
                     </p>
                   </div>
-                  <div className="w-12 h-12 rounded-xl bg-violet-100 flex items-center justify-center">
-                    <TrendingUp className="h-6 w-6 text-violet-600" />
+                  <div className="w-11 h-11 rounded-[12px] bg-[#f3effc] flex items-center justify-center shrink-0">
+                    <TrendingUp className="w-[18px] h-[18px] text-[#6d28d9]" strokeWidth={1.8} />
                   </div>
                 </div>
               </CardContent>
@@ -236,7 +246,9 @@ export function ReportsPage() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <BarChart3 className="h-5 w-5 text-slate-400" />
+                <div className="w-8 h-8 rounded-[12px] bg-[#f3effc] flex items-center justify-center">
+                  <BarChart3 className="w-4 h-4 text-[#6d28d9]" strokeWidth={1.8} />
+                </div>
                 {t.reports.byCategory}
               </CardTitle>
             </CardHeader>
@@ -251,26 +263,27 @@ export function ReportsPage() {
                     layout="vertical"
                     margin={{ left: 100, right: 30 }}
                   >
-                    <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" horizontal={false} />
+                    <CartesianGrid strokeDasharray="3 3" stroke="#ebe9e3" horizontal={false} />
                     <XAxis
                       type="number"
                       tickFormatter={(value) => formatCurrency(value)}
-                      stroke="#94a3b8"
-                      fontSize={12}
+                      stroke="#9a9a98"
+                      fontSize={11}
                     />
                     <YAxis
                       type="category"
                       dataKey="categoryName"
                       width={90}
-                      stroke="#94a3b8"
-                      fontSize={12}
+                      stroke="#9a9a98"
+                      fontSize={11}
                     />
                     <Tooltip
                       formatter={(value) => formatCurrency(value as number)}
                       contentStyle={{
                         borderRadius: '12px',
-                        border: '1px solid #e2e8f0',
-                        boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
+                        border: '1px solid #ebe9e3',
+                        boxShadow: '0 4px 16px rgba(0,0,0,0.08)',
+                        fontSize: '12px',
                       }}
                     />
                     <Bar dataKey="total" name={t.reports.amount} radius={[0, 6, 6, 0]}>
@@ -281,8 +294,11 @@ export function ReportsPage() {
                   </BarChart>
                 </ResponsiveContainer>
               ) : (
-                <div className="h-[200px] flex items-center justify-center text-slate-400">
-                  {t.reports.noData}
+                <div className="h-[200px] flex flex-col items-center justify-center gap-3">
+                  <div className="w-11 h-11 rounded-[12px] bg-[#faf9f5] flex items-center justify-center">
+                    <BarChart3 className="w-5 h-5 text-[#9a9a98]" strokeWidth={1.8} />
+                  </div>
+                  <span className="text-[13px] text-[#9a9a98]">{t.reports.noData}</span>
                 </div>
               )}
             </CardContent>
@@ -291,38 +307,39 @@ export function ReportsPage() {
           {/* Detailed Tables */}
           <div className="grid gap-6 lg:grid-cols-2">
             {/* Expenses Table */}
-            <Card className="relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-red-500/5 to-transparent rounded-bl-full" />
+            <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-red-600">
-                  <div className="w-8 h-8 rounded-lg bg-red-100 flex items-center justify-center">
-                    <ArrowDownRight className="h-4 w-4 text-red-600" />
+                <CardTitle className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-[12px] bg-[#fef2f2] flex items-center justify-center">
+                    <ArrowDownRight className="w-4 h-4 text-[#be123c]" strokeWidth={1.8} />
                   </div>
-                  {t.reports.totalExpenses}
+                  <span className="text-[#be123c]">{t.reports.totalExpenses}</span>
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-2">
+                <div className="space-y-1.5">
                   {expenseCategories.map((cat) => {
                     const total = Math.abs(stats?.totalExpenses || 1)
                     const percent = (Math.abs(cat.total) / total) * 100
                     return (
                       <div
                         key={cat.categoryId}
-                        className="flex items-center justify-between p-3 bg-slate-50 rounded-xl hover:bg-slate-100 transition-colors"
+                        className="flex items-center justify-between px-3 py-2.5 rounded-[12px] hover:bg-[#faf9f5] transition-colors"
                       >
                         <div className="flex items-center gap-3">
                           <div
-                            className="w-3 h-3 rounded-full"
-                            style={{ backgroundColor: cat.color || '#ef4444' }}
+                            className="w-2.5 h-2.5 rounded-full shrink-0"
+                            style={{ backgroundColor: cat.color || '#be123c' }}
                           />
-                          <span className="font-medium text-slate-700">{cat.categoryName}</span>
+                          <span className="text-[13.5px] font-medium text-[#1f1f1f]">
+                            {cat.categoryName}
+                          </span>
                         </div>
                         <div className="flex items-center gap-4">
-                          <span className="text-red-600 font-semibold">
+                          <span className="text-[13.5px] font-semibold tabular-nums text-[#be123c]">
                             {formatCurrency(Math.abs(cat.total))}
                           </span>
-                          <span className="text-sm text-slate-400 w-14 text-right">
+                          <span className="text-[12px] text-[#9a9a98] tabular-nums w-12 text-right">
                             {percent.toFixed(1)}%
                           </span>
                         </div>
@@ -330,8 +347,11 @@ export function ReportsPage() {
                     )
                   })}
                   {expenseCategories.length === 0 && (
-                    <div className="text-center py-8 text-slate-400">
-                      {t.reports.noData}
+                    <div className="flex flex-col items-center justify-center py-10 gap-3">
+                      <div className="w-11 h-11 rounded-[12px] bg-[#faf9f5] flex items-center justify-center">
+                        <ArrowDownRight className="w-5 h-5 text-[#9a9a98]" strokeWidth={1.8} />
+                      </div>
+                      <span className="text-[13px] text-[#9a9a98]">{t.reports.noData}</span>
                     </div>
                   )}
                 </div>
@@ -339,38 +359,39 @@ export function ReportsPage() {
             </Card>
 
             {/* Income Table */}
-            <Card className="relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-emerald-500/5 to-transparent rounded-bl-full" />
+            <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-emerald-600">
-                  <div className="w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center">
-                    <ArrowUpRight className="h-4 w-4 text-emerald-600" />
+                <CardTitle className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-[12px] bg-[#ecfdf5] flex items-center justify-center">
+                    <ArrowUpRight className="w-4 h-4 text-[#047857]" strokeWidth={1.8} />
                   </div>
-                  {t.reports.totalIncome}
+                  <span className="text-[#15803d]">{t.reports.totalIncome}</span>
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-2">
+                <div className="space-y-1.5">
                   {incomeCategories.map((cat) => {
                     const total = stats?.totalIncome || 1
                     const percent = (cat.total / total) * 100
                     return (
                       <div
                         key={cat.categoryId}
-                        className="flex items-center justify-between p-3 bg-slate-50 rounded-xl hover:bg-slate-100 transition-colors"
+                        className="flex items-center justify-between px-3 py-2.5 rounded-[12px] hover:bg-[#faf9f5] transition-colors"
                       >
                         <div className="flex items-center gap-3">
                           <div
-                            className="w-3 h-3 rounded-full"
-                            style={{ backgroundColor: cat.color || '#10b981' }}
+                            className="w-2.5 h-2.5 rounded-full shrink-0"
+                            style={{ backgroundColor: cat.color || '#047857' }}
                           />
-                          <span className="font-medium text-slate-700">{cat.categoryName}</span>
+                          <span className="text-[13.5px] font-medium text-[#1f1f1f]">
+                            {cat.categoryName}
+                          </span>
                         </div>
                         <div className="flex items-center gap-4">
-                          <span className="text-emerald-600 font-semibold">
+                          <span className="text-[13.5px] font-semibold tabular-nums text-[#15803d]">
                             {formatCurrency(cat.total)}
                           </span>
-                          <span className="text-sm text-slate-400 w-14 text-right">
+                          <span className="text-[12px] text-[#9a9a98] tabular-nums w-12 text-right">
                             {percent.toFixed(1)}%
                           </span>
                         </div>
@@ -378,8 +399,11 @@ export function ReportsPage() {
                     )
                   })}
                   {incomeCategories.length === 0 && (
-                    <div className="text-center py-8 text-slate-400">
-                      {t.reports.noData}
+                    <div className="flex flex-col items-center justify-center py-10 gap-3">
+                      <div className="w-11 h-11 rounded-[12px] bg-[#faf9f5] flex items-center justify-center">
+                        <ArrowUpRight className="w-5 h-5 text-[#9a9a98]" strokeWidth={1.8} />
+                      </div>
+                      <span className="text-[13px] text-[#9a9a98]">{t.reports.noData}</span>
                     </div>
                   )}
                 </div>
@@ -391,45 +415,47 @@ export function ReportsPage() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <CreditCard className="h-5 w-5 text-slate-400" />
+                <div className="w-8 h-8 rounded-[12px] bg-[#eff6ff] flex items-center justify-center">
+                  <CreditCard className="w-4 h-4 text-[#2563eb]" strokeWidth={1.8} />
+                </div>
                 {t.reports.byPaymentMethod}
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                 {stats?.byPaymentMethod?.map((pm) => (
                   <div
                     key={pm.paymentMethodId}
-                    className={cn(
-                      "p-5 rounded-2xl border-2 transition-all hover:shadow-md",
-                      pm.total >= 0
-                        ? "bg-gradient-to-br from-emerald-50 to-white border-emerald-100"
-                        : "bg-gradient-to-br from-red-50 to-white border-red-100"
-                    )}
+                    className="p-4 rounded-[16px] border border-[#ebe9e3] bg-[#faf9f5] hover:border-[#e0ddd4] transition-colors"
                   >
-                    <div className="flex items-center gap-3 mb-3">
+                    <div className="flex items-center gap-2.5 mb-3">
                       <div className={cn(
-                        "w-10 h-10 rounded-xl flex items-center justify-center",
-                        pm.total >= 0 ? "bg-emerald-100" : "bg-red-100"
+                        "w-9 h-9 rounded-[12px] flex items-center justify-center shrink-0",
+                        pm.total >= 0 ? "bg-[#ecfdf5]" : "bg-[#fef2f2]"
                       )}>
                         <CreditCard className={cn(
-                          "h-5 w-5",
-                          pm.total >= 0 ? "text-emerald-600" : "text-red-600"
-                        )} />
+                          "w-[17px] h-[17px]",
+                          pm.total >= 0 ? "text-[#047857]" : "text-[#be123c]"
+                        )} strokeWidth={1.8} />
                       </div>
-                      <span className="font-medium text-slate-700">{pm.paymentMethodName}</span>
+                      <span className="text-[13px] font-medium text-[#1f1f1f] leading-tight">
+                        {pm.paymentMethodName}
+                      </span>
                     </div>
                     <p className={cn(
-                      "text-2xl font-bold",
-                      pm.total >= 0 ? "text-emerald-600" : "text-red-600"
+                      "text-[22px] font-bold tracking-[-0.03em] tabular-nums",
+                      pm.total >= 0 ? "text-[#15803d]" : "text-[#be123c]"
                     )}>
                       {formatCurrency(pm.total)}
                     </p>
                   </div>
                 ))}
                 {(!stats?.byPaymentMethod || stats.byPaymentMethod.length === 0) && (
-                  <div className="col-span-full text-center py-8 text-slate-400">
-                    {t.reports.noData}
+                  <div className="col-span-full flex flex-col items-center justify-center py-10 gap-3">
+                    <div className="w-11 h-11 rounded-[12px] bg-[#faf9f5] flex items-center justify-center">
+                      <CreditCard className="w-5 h-5 text-[#9a9a98]" strokeWidth={1.8} />
+                    </div>
+                    <span className="text-[13px] text-[#9a9a98]">{t.reports.noData}</span>
                   </div>
                 )}
               </div>

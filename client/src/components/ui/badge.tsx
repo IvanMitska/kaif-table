@@ -9,14 +9,14 @@ export function Badge({ className, variant = 'default', ...props }: BadgeProps) 
   return (
     <div
       className={cn(
-        "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold transition-colors",
+        "inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-medium",
         {
-          'bg-primary/10 text-primary border border-primary/20': variant === 'default',
-          'bg-slate-100 text-slate-600 border border-slate-200': variant === 'secondary',
-          'bg-red-50 text-red-600 border border-red-100': variant === 'destructive',
-          'bg-transparent text-slate-600 border border-slate-300': variant === 'outline',
-          'bg-emerald-50 text-emerald-600 border border-emerald-100': variant === 'success',
-          'bg-amber-50 text-amber-600 border border-amber-100': variant === 'warning',
+          'bg-[#f3effc] text-[#6d28d9] border border-[#e6dcfa]': variant === 'default',
+          'bg-[#faf9f5] text-[#6b6b6b] border border-[#ebe9e3]': variant === 'secondary',
+          'bg-[#fef2f2] text-[#be123c] border border-[#fee2e2]': variant === 'destructive',
+          'bg-transparent text-[#6b6b6b] border border-[#d8d6cf]': variant === 'outline',
+          'bg-[#ecfdf5] text-[#15803d] border border-[#d1fae5]': variant === 'success',
+          'bg-[#fffbeb] text-[#b45309] border border-[#fef3c7]': variant === 'warning',
         },
         className
       )}

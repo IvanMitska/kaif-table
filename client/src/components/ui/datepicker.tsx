@@ -56,10 +56,10 @@ export function DatePicker({
       let top: number
       if (spaceBelow >= popupHeight || spaceBelow >= spaceAbove) {
         // Show below
-        top = rect.bottom + 4
+        top = rect.bottom + 6
       } else {
         // Show above
-        top = rect.top - popupHeight - 4
+        top = rect.top - popupHeight - 6
       }
 
       setPopupPosition({
@@ -154,25 +154,25 @@ export function DatePicker({
         left: popupPosition.left,
       }}
     >
-      <div className="rounded-xl border border-slate-200 bg-white p-3 shadow-xl shadow-slate-900/10 w-[280px]">
+      <div className="rounded-[16px] border border-[#ebe9e3] bg-white p-3 shadow-[0_8px_32px_rgba(0,0,0,0.12)] w-[284px]">
         {/* Header */}
         <div className="flex items-center justify-between mb-3">
           <button
             type="button"
             onClick={handlePrevMonth}
-            className="p-1.5 hover:bg-slate-100 rounded-lg transition-colors"
+            className="btn-press p-1.5 hover:bg-[#faf9f5] rounded-[10px]"
           >
-            <ChevronLeft className="h-4 w-4 text-slate-600" />
+            <ChevronLeft className="h-4 w-4 text-[#6b6b6b]" strokeWidth={1.8} />
           </button>
-          <span className="text-sm font-semibold text-slate-900 capitalize">
+          <span className="text-[13.5px] font-semibold text-[#0a0a0a] capitalize">
             {format(viewDate, "LLLL yyyy", { locale: ru })}
           </span>
           <button
             type="button"
             onClick={handleNextMonth}
-            className="p-1.5 hover:bg-slate-100 rounded-lg transition-colors"
+            className="btn-press p-1.5 hover:bg-[#faf9f5] rounded-[10px]"
           >
-            <ChevronRight className="h-4 w-4 text-slate-600" />
+            <ChevronRight className="h-4 w-4 text-[#6b6b6b]" strokeWidth={1.8} />
           </button>
         </div>
 
@@ -181,7 +181,7 @@ export function DatePicker({
           {WEEKDAYS.map((day) => (
             <div
               key={day}
-              className="h-8 flex items-center justify-center text-xs font-medium text-slate-400"
+              className="h-8 flex items-center justify-center text-[11px] font-medium text-[#9a9a98]"
             >
               {day}
             </div>
@@ -205,11 +205,11 @@ export function DatePicker({
                 type="button"
                 onClick={() => handleSelectDate(day)}
                 className={cn(
-                  "h-8 w-8 flex items-center justify-center text-sm rounded-lg transition-all",
-                  "hover:bg-slate-100",
-                  isSelected && "bg-primary text-white hover:bg-primary/90",
-                  !isSelected && isTodayDate && "bg-primary/10 text-primary font-semibold",
-                  !isSelected && !isTodayDate && "text-slate-700"
+                  "h-8 w-8 flex items-center justify-center text-[13px] rounded-[9px] transition-all duration-150",
+                  "hover:bg-[#faf9f5]",
+                  isSelected && "bg-[#0a0a0a] text-white hover:bg-[#262626]",
+                  !isSelected && isTodayDate && "ring-1 ring-inset ring-[#0a0a0a] text-[#0a0a0a] font-semibold",
+                  !isSelected && !isTodayDate && "text-[#1f1f1f]"
                 )}
               >
                 {day}
@@ -219,18 +219,18 @@ export function DatePicker({
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between mt-3 pt-3 border-t border-slate-100">
+        <div className="flex items-center justify-between mt-3 pt-3 border-t border-[#ebe9e3]">
           <button
             type="button"
             onClick={handleClear}
-            className="text-xs text-slate-500 hover:text-slate-700 transition-colors"
+            className="text-[12px] text-[#9a9a98] hover:text-[#6b6b6b] transition-colors"
           >
             Очистить
           </button>
           <button
             type="button"
             onClick={handleToday}
-            className="text-xs text-primary font-medium hover:text-primary/80 transition-colors"
+            className="text-[12px] text-[#0a0a0a] font-medium hover:opacity-70 transition-opacity"
           >
             Сегодня
           </button>
@@ -248,14 +248,15 @@ export function DatePicker({
         onClick={() => !disabled && setIsOpen(!isOpen)}
         disabled={disabled}
         className={cn(
-          "flex h-10 w-full items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 transition-all",
-          "hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary",
-          disabled && "cursor-not-allowed bg-slate-50 text-slate-400",
-          isOpen && "border-primary ring-2 ring-primary/30"
+          "flex h-10 w-full items-center gap-2 rounded-[12px] border border-[#ebe9e3] bg-white px-3 text-[13.5px] text-[#1f1f1f]",
+          "transition-[border-color,box-shadow] duration-150 ease-[cubic-bezier(0.16,1,0.3,1)]",
+          "hover:border-[#e0ddd4] focus:outline-none focus:border-[#0a0a0a] focus:shadow-[0_0_0_3px_rgba(10,10,10,0.06)]",
+          disabled && "cursor-not-allowed bg-[#faf9f5] text-[#9a9a98]",
+          isOpen && "border-[#0a0a0a] shadow-[0_0_0_3px_rgba(10,10,10,0.06)]"
         )}
       >
-        <Calendar className="h-4 w-4 text-slate-400 flex-shrink-0" />
-        <span className={cn("flex-1 text-left", !value && "text-slate-400")}>
+        <Calendar className="h-4 w-4 text-[#9a9a98] flex-shrink-0" strokeWidth={1.8} />
+        <span className={cn("flex-1 text-left", !value && "text-[#9a9a98]")}>
           {value ? format(parse(value, "yyyy-MM-dd", new Date()), "dd.MM.yyyy") : placeholder}
         </span>
       </button>

@@ -1,6 +1,7 @@
 import { cn } from "@/lib/utils"
 import { X } from "lucide-react"
 import { type ReactNode, useEffect } from "react"
+import { createPortal } from "react-dom"
 
 interface ModalProps {
   isOpen: boolean
@@ -35,11 +36,16 @@ export function Modal({ isOpen, onClose, title, children, className, size = 'md'
     xl: 'max-w-xl',
   }
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+  // Portal into document.body so the modal escapes any ancestor stacking
+  // context / `transform` containing block (e.g. `.page-enter`, `.stagger-animation`).
+  // Without the portal, `position: fixed` here would be contained by those
+  // transformed ancestors and the backdrop would only cover the page area
+  // instead of the whole viewport.
+  return createPortal(
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
       {/* Backdrop */}
       <div
-        className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm animate-fadeIn"
+        className="fixed inset-0 bg-[#0a0a0a]/55 animate-fadeIn"
         onClick={onClose}
         aria-hidden="true"
       />
@@ -47,24 +53,27 @@ export function Modal({ isOpen, onClose, title, children, className, size = 'md'
       {/* Modal */}
       <div
         className={cn(
-          "relative z-50 w-full bg-white rounded-2xl shadow-2xl p-6 animate-fadeIn",
+          "scroll-refined relative z-[101] w-full max-h-[90vh] overflow-y-auto bg-white rounded-[20px] border border-[#ebe9e3]",
+          "shadow-[0_24px_60px_-12px_rgba(10,10,10,0.25),0_8px_24px_-8px_rgba(10,10,10,0.15)] p-6 animate-scaleIn",
           sizeClasses[size],
           className
         )}
       >
         {title && (
-          <div className="flex items-center justify-between mb-5 pb-4 border-b border-slate-100">
-            <h2 className="text-lg font-semibold text-slate-900">{title}</h2>
+          <div className="flex items-center justify-between mb-5 pb-4 border-b border-[#ebe9e3]">
+            <h2 className="text-[16px] font-semibold tracking-[-0.01em] text-[#0a0a0a]">{title}</h2>
             <button
               onClick={onClose}
-              className="p-2 -mr-2 hover:bg-slate-100 rounded-lg transition-colors"
+              aria-label="Close"
+              className="btn-press w-9 h-9 -mr-1.5 flex items-center justify-center rounded-[10px] text-[#6b6b6b] hover:text-[#0a0a0a] hover:bg-[#faf9f5] transition-colors"
             >
-              <X className="h-5 w-5 text-slate-400" />
+              <X className="h-[18px] w-[18px]" strokeWidth={1.8} />
             </button>
           </div>
         )}
         {children}
       </div>
-    </div>
+    </div>,
+    document.body,
   )
 }

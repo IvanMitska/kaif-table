@@ -88,106 +88,140 @@ export function CategoriesPage() {
   const incomeCategories = categories.filter(c => c.type === 'income')
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 page-enter">
       {/* Header */}
-      <div>
-        <h2 className="text-2xl font-bold text-slate-900">{t.categories.title}</h2>
-        <p className="text-slate-500 mt-1">{t.categories.subtitle}</p>
+      <div className="flex items-center justify-between gap-4">
+        <div>
+          <h2 className="page-title">{t.categories.title}</h2>
+          <p className="page-subtitle">{t.categories.subtitle}</p>
+        </div>
+        {activeTab === 'categories' ? (
+          <Button
+            onClick={() => {
+              setEditingCategory(null)
+              setNewCategoryType('expense')
+              setIsModalOpen(true)
+            }}
+          >
+            <Plus className="h-4 w-4 mr-1.5" strokeWidth={1.8} />
+            {t.categories.add}
+          </Button>
+        ) : (
+          <Button
+            onClick={() => {
+              setEditingPaymentMethod(null)
+              setIsModalOpen(true)
+            }}
+          >
+            <Plus className="h-4 w-4 mr-1.5" strokeWidth={1.8} />
+            {t.categories.addMethod}
+          </Button>
+        )}
       </div>
 
-      {/* Tabs */}
-      <div className="flex gap-2 p-1 bg-slate-100 rounded-xl w-fit">
+      {/* Segmented control tabs */}
+      <div className="flex items-center gap-1 p-1 bg-[#faf9f5] border border-[#ebe9e3] rounded-full w-fit">
         <button
+          type="button"
           className={cn(
-            "flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium transition-all",
+            "flex items-center gap-2 px-4 py-2 rounded-full text-[13px] font-medium transition-all",
             activeTab === 'categories'
-              ? "bg-white text-slate-900 shadow-sm"
-              : "text-slate-600 hover:text-slate-900"
+              ? "bg-[#0a0a0a] text-white"
+              : "text-[#6b6b6b] hover:text-[#1f1f1f]"
           )}
           onClick={() => setActiveTab('categories')}
         >
-          <FolderOpen className="h-4 w-4" />
+          <FolderOpen className="h-[15px] w-[15px]" strokeWidth={1.8} />
           {t.categories.categoriesTab}
-          <Badge variant="secondary" className="ml-1">{categories.length}</Badge>
+          <Badge variant="secondary" className="ml-0.5">{categories.length}</Badge>
         </button>
         <button
+          type="button"
           className={cn(
-            "flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium transition-all",
+            "flex items-center gap-2 px-4 py-2 rounded-full text-[13px] font-medium transition-all",
             activeTab === 'payment-methods'
-              ? "bg-white text-slate-900 shadow-sm"
-              : "text-slate-600 hover:text-slate-900"
+              ? "bg-[#0a0a0a] text-white"
+              : "text-[#6b6b6b] hover:text-[#1f1f1f]"
           )}
           onClick={() => setActiveTab('payment-methods')}
         >
-          <CreditCard className="h-4 w-4" />
+          <CreditCard className="h-[15px] w-[15px]" strokeWidth={1.8} />
           {t.categories.paymentMethodsTab}
-          <Badge variant="secondary" className="ml-1">{paymentMethods.length}</Badge>
+          <Badge variant="secondary" className="ml-0.5">{paymentMethods.length}</Badge>
         </button>
       </div>
 
       {activeTab === 'categories' ? (
-        <div className="grid gap-6 lg:grid-cols-2">
+        <div className="grid gap-5 lg:grid-cols-2">
           {/* Expense Categories */}
-          <Card className="relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-red-500/10 to-transparent rounded-bl-full pointer-events-none" />
+          <Card>
             <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-lg bg-red-100 flex items-center justify-center">
-                  <FolderOpen className="h-4 w-4 text-red-600" />
+              <CardTitle className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-[12px] bg-[#fef2f2] flex items-center justify-center flex-shrink-0">
+                  <FolderOpen className="h-[15px] w-[15px] text-[#be123c]" strokeWidth={1.8} />
                 </div>
-                {t.categories.expenseCategories}
-                <Badge variant="destructive" className="ml-2">{expenseCategories.length}</Badge>
+                <span>{t.categories.expenseCategories}</span>
+                <Badge variant="destructive" className="ml-1">{expenseCategories.length}</Badge>
               </CardTitle>
               <Button
                 size="sm"
-                className="bg-gradient-to-r from-red-500 to-rose-500 hover:from-red-600 hover:to-rose-600"
-                onClick={() => { setEditingCategory(null); setNewCategoryType('expense'); setIsModalOpen(true) }}
+                onClick={() => {
+                  setEditingCategory(null)
+                  setNewCategoryType('expense')
+                  setIsModalOpen(true)
+                }}
               >
-                <Plus className="h-4 w-4 mr-1" />
+                <Plus className="h-3.5 w-3.5 mr-1" strokeWidth={1.8} />
                 {t.categories.add}
               </Button>
             </CardHeader>
             <CardContent>
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 {expenseCategories.map((category) => (
                   <div
                     key={category.id}
-                    className="flex items-center justify-between p-3 bg-slate-50 rounded-xl hover:bg-slate-100 transition-colors group"
+                    className="flex items-center justify-between px-3 py-2.5 rounded-[12px] bg-[#faf9f5] hover:bg-[#f1f0ea] transition-colors group"
                   >
                     <div className="flex items-center gap-3">
                       <div
-                        className="w-4 h-4 rounded-full ring-2 ring-white shadow-sm"
-                        style={{ backgroundColor: category.color || '#ef4444' }}
+                        className="w-7 h-7 rounded-[8px] flex-shrink-0"
+                        style={{ backgroundColor: category.color || '#ef4444', opacity: 0.85 }}
                       />
-                      <span className="font-medium text-slate-700">{category.name}</span>
+                      <span className="text-[13.5px] font-medium text-[#0a0a0a]">
+                        {category.name}
+                      </span>
                     </div>
                     <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8"
-                        onClick={() => { setEditingCategory(category); setIsModalOpen(true) }}
+                      <button
+                        type="button"
+                        className="w-8 h-8 rounded-[10px] flex items-center justify-center text-[#6b6b6b] hover:bg-white hover:text-[#0a0a0a] transition-colors"
+                        onClick={() => {
+                          setEditingCategory(category)
+                          setIsModalOpen(true)
+                        }}
                       >
-                        <Edit2 className="h-4 w-4 text-slate-500" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8"
+                        <Edit2 className="h-[15px] w-[15px]" strokeWidth={1.8} />
+                      </button>
+                      <button
+                        type="button"
+                        className="w-8 h-8 rounded-[10px] flex items-center justify-center text-[#6b6b6b] hover:bg-[#fef2f2] hover:text-[#be123c] transition-colors"
                         onClick={() => {
                           if (confirm(t.categories.deleteCategory)) {
                             deleteCategoryMutation.mutate(category.id)
                           }
                         }}
                       >
-                        <Trash2 className="h-4 w-4 text-red-500" />
-                      </Button>
+                        <Trash2 className="h-[15px] w-[15px]" strokeWidth={1.8} />
+                      </button>
                     </div>
                   </div>
                 ))}
                 {expenseCategories.length === 0 && (
-                  <div className="text-center py-8 text-slate-400">
-                    {t.categories.noExpenseCategories}
+                  <div className="flex flex-col items-center justify-center py-10 gap-3">
+                    <div className="w-10 h-10 rounded-[12px] bg-[#fef2f2] flex items-center justify-center">
+                      <FolderOpen className="h-5 w-5 text-[#be123c]" strokeWidth={1.8} />
+                    </div>
+                    <p className="text-[13px] text-[#9a9a98]">{t.categories.noExpenseCategories}</p>
                   </div>
                 )}
               </div>
@@ -195,66 +229,74 @@ export function CategoriesPage() {
           </Card>
 
           {/* Income Categories */}
-          <Card className="relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-emerald-500/10 to-transparent rounded-bl-full pointer-events-none" />
+          <Card>
             <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center">
-                  <FolderOpen className="h-4 w-4 text-emerald-600" />
+              <CardTitle className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-[12px] bg-[#ecfdf5] flex items-center justify-center flex-shrink-0">
+                  <FolderOpen className="h-[15px] w-[15px] text-[#047857]" strokeWidth={1.8} />
                 </div>
-                {t.categories.incomeCategories}
-                <Badge variant="success" className="ml-2">{incomeCategories.length}</Badge>
+                <span>{t.categories.incomeCategories}</span>
+                <Badge variant="success" className="ml-1">{incomeCategories.length}</Badge>
               </CardTitle>
               <Button
                 size="sm"
-                className="bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600"
-                onClick={() => { setEditingCategory(null); setNewCategoryType('income'); setIsModalOpen(true) }}
+                onClick={() => {
+                  setEditingCategory(null)
+                  setNewCategoryType('income')
+                  setIsModalOpen(true)
+                }}
               >
-                <Plus className="h-4 w-4 mr-1" />
+                <Plus className="h-3.5 w-3.5 mr-1" strokeWidth={1.8} />
                 {t.categories.add}
               </Button>
             </CardHeader>
             <CardContent>
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 {incomeCategories.map((category) => (
                   <div
                     key={category.id}
-                    className="flex items-center justify-between p-3 bg-slate-50 rounded-xl hover:bg-slate-100 transition-colors group"
+                    className="flex items-center justify-between px-3 py-2.5 rounded-[12px] bg-[#faf9f5] hover:bg-[#f1f0ea] transition-colors group"
                   >
                     <div className="flex items-center gap-3">
                       <div
-                        className="w-4 h-4 rounded-full ring-2 ring-white shadow-sm"
-                        style={{ backgroundColor: category.color || '#10b981' }}
+                        className="w-7 h-7 rounded-[8px] flex-shrink-0"
+                        style={{ backgroundColor: category.color || '#10b981', opacity: 0.85 }}
                       />
-                      <span className="font-medium text-slate-700">{category.name}</span>
+                      <span className="text-[13.5px] font-medium text-[#0a0a0a]">
+                        {category.name}
+                      </span>
                     </div>
                     <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8"
-                        onClick={() => { setEditingCategory(category); setIsModalOpen(true) }}
+                      <button
+                        type="button"
+                        className="w-8 h-8 rounded-[10px] flex items-center justify-center text-[#6b6b6b] hover:bg-white hover:text-[#0a0a0a] transition-colors"
+                        onClick={() => {
+                          setEditingCategory(category)
+                          setIsModalOpen(true)
+                        }}
                       >
-                        <Edit2 className="h-4 w-4 text-slate-500" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8"
+                        <Edit2 className="h-[15px] w-[15px]" strokeWidth={1.8} />
+                      </button>
+                      <button
+                        type="button"
+                        className="w-8 h-8 rounded-[10px] flex items-center justify-center text-[#6b6b6b] hover:bg-[#fef2f2] hover:text-[#be123c] transition-colors"
                         onClick={() => {
                           if (confirm(t.categories.deleteCategory)) {
                             deleteCategoryMutation.mutate(category.id)
                           }
                         }}
                       >
-                        <Trash2 className="h-4 w-4 text-red-500" />
-                      </Button>
+                        <Trash2 className="h-[15px] w-[15px]" strokeWidth={1.8} />
+                      </button>
                     </div>
                   </div>
                 ))}
                 {incomeCategories.length === 0 && (
-                  <div className="text-center py-8 text-slate-400">
-                    {t.categories.noIncomeCategories}
+                  <div className="flex flex-col items-center justify-center py-10 gap-3">
+                    <div className="w-10 h-10 rounded-[12px] bg-[#ecfdf5] flex items-center justify-center">
+                      <FolderOpen className="h-5 w-5 text-[#047857]" strokeWidth={1.8} />
+                    </div>
+                    <p className="text-[13px] text-[#9a9a98]">{t.categories.noIncomeCategories}</p>
                   </div>
                 )}
               </div>
@@ -262,66 +304,66 @@ export function CategoriesPage() {
           </Card>
         </div>
       ) : (
-        <Card className="relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-to-br from-violet-500/10 to-transparent rounded-bl-full pointer-events-none" />
+        <Card>
           <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle className="flex items-center gap-2">
-              <div className="w-10 h-10 rounded-xl bg-violet-100 flex items-center justify-center">
-                <Wallet className="h-5 w-5 text-violet-600" />
+            <CardTitle className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-[12px] bg-[#f3effc] flex items-center justify-center flex-shrink-0">
+                <Wallet className="h-[17px] w-[17px] text-[#6d28d9]" strokeWidth={1.8} />
               </div>
               <div>
-                <span className="block">{t.categories.paymentMethods}</span>
-                <span className="text-sm font-normal text-slate-500">{t.categories.paymentMethodsSubtitle}</span>
+                <span className="block text-[15px] font-semibold text-[#0a0a0a]">
+                  {t.categories.paymentMethods}
+                </span>
+                <span className="block text-[12.5px] font-normal text-[#9a9a98]">
+                  {t.categories.paymentMethodsSubtitle}
+                </span>
               </div>
             </CardTitle>
-            <Button
-              className="bg-gradient-to-r from-violet-500 to-purple-500 hover:from-violet-600 hover:to-purple-600"
-              onClick={() => { setEditingPaymentMethod(null); setIsModalOpen(true) }}
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              {t.categories.addMethod}
-            </Button>
           </CardHeader>
           <CardContent>
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
               {paymentMethods.map((pm) => (
                 <div
                   key={pm.id}
-                  className="flex items-center justify-between p-4 bg-gradient-to-br from-slate-50 to-white rounded-xl border border-slate-100 hover:border-violet-200 hover:shadow-md transition-all group"
+                  className="flex items-center justify-between p-3.5 bg-[#faf9f5] rounded-[14px] border border-[#ebe9e3] hover:border-[#e0ddd4] hover:bg-[#f1f0ea] transition-colors group"
                 >
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-violet-100 flex items-center justify-center">
-                      <CreditCard className="h-5 w-5 text-violet-600" />
+                    <div className="w-8 h-8 rounded-[10px] bg-[#f3effc] flex items-center justify-center flex-shrink-0">
+                      <CreditCard className="h-[15px] w-[15px] text-[#6d28d9]" strokeWidth={1.8} />
                     </div>
-                    <span className="font-medium text-slate-700">{pm.name}</span>
+                    <span className="text-[13.5px] font-medium text-[#0a0a0a]">{pm.name}</span>
                   </div>
                   <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8"
-                      onClick={() => { setEditingPaymentMethod(pm); setIsModalOpen(true) }}
+                    <button
+                      type="button"
+                      className="w-8 h-8 rounded-[10px] flex items-center justify-center text-[#6b6b6b] hover:bg-white hover:text-[#0a0a0a] transition-colors"
+                      onClick={() => {
+                        setEditingPaymentMethod(pm)
+                        setIsModalOpen(true)
+                      }}
                     >
-                      <Edit2 className="h-4 w-4 text-slate-500" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8"
+                      <Edit2 className="h-[15px] w-[15px]" strokeWidth={1.8} />
+                    </button>
+                    <button
+                      type="button"
+                      className="w-8 h-8 rounded-[10px] flex items-center justify-center text-[#6b6b6b] hover:bg-[#fef2f2] hover:text-[#be123c] transition-colors"
                       onClick={() => {
                         if (confirm(t.categories.deletePaymentMethod)) {
                           deletePaymentMethodMutation.mutate(pm.id)
                         }
                       }}
                     >
-                      <Trash2 className="h-4 w-4 text-red-500" />
-                    </Button>
+                      <Trash2 className="h-[15px] w-[15px]" strokeWidth={1.8} />
+                    </button>
                   </div>
                 </div>
               ))}
               {paymentMethods.length === 0 && (
-                <div className="col-span-full text-center py-12 text-slate-400">
-                  {t.categories.noPaymentMethods}
+                <div className="col-span-full flex flex-col items-center justify-center py-12 gap-3">
+                  <div className="w-10 h-10 rounded-[12px] bg-[#f3effc] flex items-center justify-center">
+                    <CreditCard className="h-5 w-5 text-[#6d28d9]" strokeWidth={1.8} />
+                  </div>
+                  <p className="text-[13px] text-[#9a9a98]">{t.categories.noPaymentMethods}</p>
                 </div>
               )}
             </div>
@@ -421,17 +463,20 @@ function CategoryModal({ isOpen, onClose, category, defaultType, onSubmit, isLoa
     >
       <form onSubmit={handleSubmit} className="space-y-5">
         <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1.5">{t.categoryModal.name}</label>
+          <label className="block text-[12.5px] font-medium text-[#6b6b6b] mb-1.5">
+            {t.categoryModal.name}
+          </label>
           <Input
             value={formData.name}
             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
             placeholder={t.categoryModal.namePlaceholder}
-            className="bg-white"
             required
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1.5">{t.categoryModal.type}</label>
+          <label className="block text-[12.5px] font-medium text-[#6b6b6b] mb-1.5">
+            {t.categoryModal.type}
+          </label>
           <Dropdown
             value={formData.type}
             onChange={(value) => setFormData({ ...formData, type: value as 'income' | 'expense' })}
@@ -442,17 +487,19 @@ function CategoryModal({ isOpen, onClose, category, defaultType, onSubmit, isLoa
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-slate-700 mb-2">{t.categoryModal.color}</label>
+          <label className="block text-[12.5px] font-medium text-[#6b6b6b] mb-2">
+            {t.categoryModal.color}
+          </label>
           <div className="flex flex-wrap gap-2 mb-3">
             {presetColors.map((color) => (
               <button
                 key={color}
                 type="button"
                 className={cn(
-                  "w-8 h-8 rounded-lg transition-all",
+                  "w-7 h-7 rounded-[8px] transition-all hover:scale-105",
                   formData.color === color
-                    ? "ring-2 ring-offset-2 ring-slate-400 scale-110"
-                    : "hover:scale-110"
+                    ? "ring-2 ring-[#0a0a0a] ring-offset-2"
+                    : "ring-1 ring-[#ebe9e3]"
                 )}
                 style={{ backgroundColor: color }}
                 onClick={() => setFormData({ ...formData, color })}
@@ -470,25 +517,21 @@ function CategoryModal({ isOpen, onClose, category, defaultType, onSubmit, isLoa
               type="text"
               value={formData.color}
               onChange={(e) => setFormData({ ...formData, color: e.target.value })}
-              className="flex-1 bg-white font-mono text-sm"
+              className="flex-1 font-mono text-sm"
               placeholder="#000000"
             />
           </div>
         </div>
-        <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">
+        <div className="flex justify-end gap-2.5 pt-4 border-t border-[#ebe9e3]">
           <Button type="button" variant="outline" onClick={onClose}>
             {t.categoryModal.cancel}
           </Button>
-          <Button
-            type="submit"
-            disabled={isLoading}
-            className="bg-gradient-to-r from-primary to-indigo-600 hover:from-primary/90 hover:to-indigo-600/90"
-          >
+          <Button type="submit" disabled={isLoading}>
             {isLoading ? (
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              <span className="flex items-center gap-2">
+                <div className="w-4 h-4 spinner" />
                 {t.categoryModal.saving}
-              </div>
+              </span>
             ) : t.categoryModal.save}
           </Button>
         </div>
@@ -526,29 +569,26 @@ function PaymentMethodModal({ isOpen, onClose, paymentMethod, onSubmit, isLoadin
     >
       <form onSubmit={handleSubmit} className="space-y-5">
         <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1.5">{t.paymentMethodModal.name}</label>
+          <label className="block text-[12.5px] font-medium text-[#6b6b6b] mb-1.5">
+            {t.paymentMethodModal.name}
+          </label>
           <Input
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder={t.paymentMethodModal.namePlaceholder}
-            className="bg-white"
             required
           />
         </div>
-        <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">
+        <div className="flex justify-end gap-2.5 pt-4 border-t border-[#ebe9e3]">
           <Button type="button" variant="outline" onClick={onClose}>
             {t.paymentMethodModal.cancel}
           </Button>
-          <Button
-            type="submit"
-            disabled={isLoading}
-            className="bg-gradient-to-r from-violet-500 to-purple-500 hover:from-violet-600 hover:to-purple-600"
-          >
+          <Button type="submit" disabled={isLoading}>
             {isLoading ? (
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              <span className="flex items-center gap-2">
+                <div className="w-4 h-4 spinner" />
                 {t.paymentMethodModal.saving}
-              </div>
+              </span>
             ) : t.paymentMethodModal.save}
           </Button>
         </div>
