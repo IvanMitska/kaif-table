@@ -48,13 +48,22 @@ export interface TransactionFilters {
 }
 
 export interface DashboardStats {
+  /** Revenue from iiko sales for the period (POS-imported, not manual). */
   totalIncome: number
+  /** Sum of manual expense transactions (negative number). */
   totalExpenses: number
   balance: number
+  /** Count of manual Transaction rows. */
   transactionCount: number
   byCategory: { categoryId: number; categoryName: string; total: number; color?: string }[]
   byPaymentMethod: { paymentMethodId: number; paymentMethodName: string; total: number }[]
   dailyTrend: { date: string; income: number; expenses: number }[]
+  /** Distinct order numbers from iiko sales for the period. */
+  iikoOrderCount?: number
+  /** Average check across iiko orders for the period. */
+  iikoAverageCheck?: number
+  /** Revenue broken down by iiko dish category. */
+  iikoRevenueByCategory?: { category: string; amount: number }[]
 }
 
 export interface AuthResponse {

@@ -16,6 +16,8 @@ import {
   ArrowUpRight,
   BarChart3,
   Plus,
+  Receipt,
+  ShoppingCart,
   TrendingUp,
   Wallet,
   Zap,
@@ -215,6 +217,69 @@ export function DashboardPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* iiko quick stats — only when there's data from the integration */}
+      {!!stats?.iikoOrderCount && stats.iikoOrderCount > 0 && (
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {/* Orders */}
+          <Card className="card-hover">
+            <CardContent className="pt-5">
+              <div className="flex items-start justify-between">
+                <div className="flex-1 min-w-0">
+                  <p className="text-[12.5px] font-medium text-[#9a9a98]">{t.iiko.orders}</p>
+                  <p className="text-[26px] font-bold tabular-nums text-[#0a0a0a] mt-1 leading-none">
+                    {stats.iikoOrderCount}
+                  </p>
+                </div>
+                <div className="icon-soft w-11 h-11 shrink-0 bg-[#eff6ff] rounded-[12px] flex items-center justify-center">
+                  <ShoppingCart className="h-[18px] w-[18px] text-[#2563eb]" strokeWidth={1.8} />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Average check */}
+          <Card className="card-hover">
+            <CardContent className="pt-5">
+              <div className="flex items-start justify-between">
+                <div className="flex-1 min-w-0">
+                  <p className="text-[12.5px] font-medium text-[#9a9a98]">{t.iiko.avgCheck}</p>
+                  <p className="text-[26px] font-bold tabular-nums text-[#0a0a0a] mt-1 leading-none">
+                    {formatCurrency(stats.iikoAverageCheck || 0)}
+                  </p>
+                </div>
+                <div className="icon-soft w-11 h-11 shrink-0 bg-[#f3effc] rounded-[12px] flex items-center justify-center">
+                  <Receipt className="h-[18px] w-[18px] text-[#6d28d9]" strokeWidth={1.8} />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Top revenue category from iiko */}
+          {stats.iikoRevenueByCategory && stats.iikoRevenueByCategory.length > 0 && (
+            <Card className="card-hover">
+              <CardContent className="pt-5">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[12.5px] font-medium text-[#9a9a98]">
+                      {t.iiko.byCategory || 'Топ категория'}
+                    </p>
+                    <p className="text-[15px] font-semibold text-[#0a0a0a] mt-1.5 truncate">
+                      {stats.iikoRevenueByCategory[0].category}
+                    </p>
+                    <p className="text-[13px] font-medium tabular-nums text-[#15803d] mt-0.5">
+                      {formatCurrency(stats.iikoRevenueByCategory[0].amount)}
+                    </p>
+                  </div>
+                  <div className="icon-soft w-11 h-11 shrink-0 bg-[#ecfdf5] rounded-[12px] flex items-center justify-center">
+                    <BarChart3 className="h-[18px] w-[18px] text-[#047857]" strokeWidth={1.8} />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+      )}
 
       {/* Charts */}
       <div className="grid gap-6 lg:grid-cols-2">
