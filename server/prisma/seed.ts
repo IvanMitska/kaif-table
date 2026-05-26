@@ -1,7 +1,12 @@
 import { PrismaClient } from '@prisma/client'
 import bcrypt from 'bcryptjs'
+import crypto from 'crypto'
 
 const prisma = new PrismaClient()
+
+function sha1Hash(value: string): string {
+  return crypto.createHash('sha1').update(value).digest('hex')
+}
 
 async function main() {
   console.log('Seeding database...')
@@ -62,6 +67,45 @@ async function main() {
     },
   })
   console.log('Admin user created/updated: admin@kaif.com')
+
+  // iiko integration — pin the integration login/password to the dedicated
+  // technical account `kaif_api`. The previous `Boris АУП` employee account
+  // was deleted in iiko, which killed the integration. `kaif_api` is a
+  // technical account not tied to any real employee, so it can't be removed
+  // by HR processes.
+  //
+  // - login/password: hardcoded defaults, override via IIKO_LOGIN / IIKO_PASSWORD
+  // - serverUrl: only updated if IIKO_SERVER_URL is provided
+  // Setting the password on every deploy guarantees the integration recovers
+  // even if someone changes it manually in the UI to something stale.
+  const iikoLogin = process.env.IIKO_LOGIN ?? 'kaif_api'
+  const iikoServerUrl = process.env.IIKO_SERVER_URL
+  const iikoPassword = process.env.IIKO_PASSWORD ?? '1124'
+
+  const existingIiko = await prisma.iikoSettings.findFirst()
+  if (existingIiko) {
+    await prisma.iikoSettings.update({
+      where: { id: existingIiko.id },
+      data: {
+        login: iikoLogin,
+        ...(iikoServerUrl ? { serverUrl: iikoServerUrl } : {}),
+        ...(iikoPassword ? { passwordHash: sha1Hash(iikoPassword) } : {}),
+      },
+    })
+    console.log(`iiko settings updated: login=${iikoLogin} (password rotated)`)
+  } else if (iikoServerUrl && iikoPassword) {
+    await prisma.iikoSettings.create({
+      data: {
+        serverUrl: iikoServerUrl,
+        login: iikoLogin,
+        passwordHash: sha1Hash(iikoPassword),
+        isActive: true,
+      },
+    })
+    console.log(`iiko settings created: ${iikoServerUrl} as ${iikoLogin}`)
+  } else {
+    console.log('No iiko settings yet — configure via UI (iiko Settings page).')
+  }
 
   console.log('Seed completed!')
 }
