@@ -387,6 +387,71 @@ export class IikoService {
   }
 
   /**
+   * Get full nomenclature (menu items, categories, groups) from iiko
+   */
+  async getNomenclature(): Promise<any> {
+    const token = await this.authenticate()
+
+    try {
+      // Get products list
+      const productsResponse = await axios.get(
+        `${this.config.serverUrl}/resto/api/v2/entities/products/list`,
+        {
+          params: { key: token },
+          timeout: 60000,
+        }
+      )
+
+      // Get product categories
+      const categoriesResponse = await axios.get(
+        `${this.config.serverUrl}/resto/api/v2/entities/products/category/list`,
+        {
+          params: { key: token },
+          timeout: 60000,
+        }
+      )
+
+      const products = Array.isArray(productsResponse.data) ? productsResponse.data : []
+      const categories = Array.isArray(categoriesResponse.data) ? categoriesResponse.data : []
+
+      return { products, categories }
+    } catch (error: any) {
+      console.error('Failed to get nomenclature:', error.response?.data || error.message)
+      throw new Error(`Failed to fetch nomenclature: ${error.response?.data || error.message}`)
+    }
+  }
+
+  /**
+   * Get employees list from iiko
+   */
+  async getEmployees(): Promise<any[]> {
+    const token = await this.authenticate()
+
+    try {
+      const response = await axios.get(
+        `${this.config.serverUrl}/resto/api/employees`,
+        {
+          params: { key: token },
+          timeout: 60000,
+        }
+      )
+
+      // Handle XML or JSON response
+      const data = response.data
+      if (Array.isArray(data)) {
+        return data
+      }
+      // Try to extract from wrapper
+      if (data?.employees) return data.employees
+      if (data?.corporateItemDtoes) return data.corporateItemDtoes
+      return []
+    } catch (error: any) {
+      console.error('Failed to get employees:', error.response?.data || error.message)
+      throw new Error(`Failed to fetch employees: ${error.response?.data || error.message}`)
+    }
+  }
+
+  /**
    * Test connection to iiko server
    */
   async testConnection(): Promise<{ success: boolean; message: string }> {

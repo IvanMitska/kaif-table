@@ -1307,6 +1307,344 @@ router.get('/analytics/cooking-places', async (req: AuthRequest, res) => {
   }
 })
 
+// ==================== NOMENCLATURE ====================
+
+// Get current nomenclature (categories and dishes) directly from iiko
+router.get('/nomenclature', async (_req: AuthRequest, res) => {
+  try {
+    const settings = await prisma.iikoSettings.findFirst({
+      where: { isActive: true },
+    })
+
+    if (!settings) {
+      return res.status(400).json({ message: 'iiko settings not configured' })
+    }
+
+    const service = new IikoService({
+      serverUrl: settings.serverUrl,
+      login: settings.login,
+      password: settings.passwordHash,
+    })
+
+    const { products, categories } = await service.getNomenclature()
+    await service.logout()
+
+    // Group products by category/parent
+    const categoryMap = new Map<string, any>()
+    for (const cat of categories) {
+      categoryMap.set(cat.id, {
+        id: cat.id,
+        name: cat.name,
+        deleted: cat.deleted || false,
+      })
+    }
+
+    // Build product list with useful fields
+    const menuItems = products
+      .filter((p: any) => p.type === 'DISH' || p.type === 'GOOD' || p.type === 'MODIFIER')
+      .map((p: any) => ({
+        id: p.id,
+        name: p.name,
+        code: p.code || null,
+        type: p.type,
+        parentId: p.parentId || null,
+        parentName: p.parent || null,
+        categoryId: p.productCategoryId || null,
+        categoryName: categoryMap.get(p.productCategoryId)?.name || null,
+        price: p.price || null,
+        deleted: p.deleted || false,
+      }))
+      .filter((p: any) => !p.deleted)
+      .sort((a: any, b: any) => (a.parentName || '').localeCompare(b.parentName || ''))
+
+    // Group items by parent (menu group)
+    const groupMap = new Map<string, any[]>()
+    for (const item of menuItems) {
+      const group = item.parentName || 'Без группы'
+      if (!groupMap.has(group)) groupMap.set(group, [])
+      groupMap.get(group)!.push(item)
+    }
+
+    const byGroup = Array.from(groupMap.entries())
+      .map(([group, items]) => ({
+        group,
+        itemCount: items.length,
+        items: items.sort((a: any, b: any) => a.name.localeCompare(b.name)),
+      }))
+      .sort((a, b) => a.group.localeCompare(b.group))
+
+    // Active categories from categories list
+    const activeCategories = categories
+      .filter((c: any) => !c.deleted)
+      .map((c: any) => ({
+        id: c.id,
+        name: c.name,
+      }))
+      .sort((a: any, b: any) => a.name.localeCompare(b.name))
+
+    res.json({
+      totalItems: menuItems.length,
+      totalCategories: activeCategories.length,
+      totalGroups: byGroup.length,
+      categories: activeCategories,
+      byGroup,
+    })
+  } catch (error: any) {
+    console.error('Get nomenclature error:', error)
+    res.status(500).json({ message: error.message || 'Failed to get nomenclature' })
+  }
+})
+
+// ==================== EXTENDED WAITER ANALYTICS ====================
+
+// Detailed waiter analytics with shifts, sessions, daily breakdown
+router.get('/analytics/waiters/detailed', async (req: AuthRequest, res) => {
+  try {
+    const { dateFrom, dateTo } = req.query
+
+    if (!dateFrom || !dateTo) {
+      return res.status(400).json({ message: 'Date range is required' })
+    }
+
+    const sales = await prisma.iikoSale.findMany({
+      where: {
+        openTime: {
+          gte: new Date(dateFrom as string),
+          lte: new Date((dateTo as string) + 'T23:59:59'),
+        },
+      },
+    })
+
+    // Build detailed waiter data
+    const waiterMap = new Map<string, {
+      waiterId: string
+      waiterName: string
+      revenue: number
+      quantity: number
+      orders: Set<string>
+      guestCount: number
+      totalDiscount: number
+      // By session (shift)
+      sessions: Map<string, {
+        sessionNum: string
+        revenue: number
+        orders: Set<string>
+        firstOrder: Date
+        lastOrder: Date
+      }>
+      // By day
+      days: Map<string, {
+        date: string
+        revenue: number
+        orders: Set<string>
+        guestCount: number
+      }>
+      // By category
+      categories: Map<string, {
+        category: string
+        revenue: number
+        quantity: number
+      }>
+      // By hour
+      hours: Map<number, {
+        hour: number
+        revenue: number
+        orderCount: number
+      }>
+      // Service time tracking
+      orderTimes: Map<string, { open: Date; close: Date | null }>
+    }>()
+
+    for (const sale of sales) {
+      const key = sale.waiterId || sale.waiterName || 'unknown'
+      if (key === 'unknown' || !sale.waiterName) continue
+
+      // Safely convert dates - handle null/string/Date values from Prisma
+      const openTime = sale.openTime instanceof Date ? sale.openTime : new Date(sale.openTime)
+      if (isNaN(openTime.getTime())) continue // skip invalid dates
+
+      const closeTime = sale.closeTime
+        ? (sale.closeTime instanceof Date ? sale.closeTime : new Date(sale.closeTime))
+        : null
+
+      if (!waiterMap.has(key)) {
+        waiterMap.set(key, {
+          waiterId: sale.waiterId || '',
+          waiterName: sale.waiterName || 'Неизвестно',
+          revenue: 0,
+          quantity: 0,
+          orders: new Set(),
+          guestCount: 0,
+          totalDiscount: 0,
+          sessions: new Map(),
+          days: new Map(),
+          categories: new Map(),
+          hours: new Map(),
+          orderTimes: new Map(),
+        })
+      }
+
+      const waiter = waiterMap.get(key)!
+      waiter.revenue += sale.amount || 0
+      waiter.quantity += sale.quantity || 0
+      waiter.totalDiscount += sale.discountSum || 0
+
+      const isNewOrder = !waiter.orders.has(sale.orderNum)
+      waiter.orders.add(sale.orderNum)
+
+      if (isNewOrder && sale.guestCount) {
+        waiter.guestCount += sale.guestCount
+      }
+
+      // Track order times for service speed
+      if (!waiter.orderTimes.has(sale.orderNum)) {
+        waiter.orderTimes.set(sale.orderNum, {
+          open: openTime,
+          close: closeTime && !isNaN(closeTime.getTime()) ? closeTime : null,
+        })
+      }
+
+      // By session/shift
+      const sessionKey = sale.sessionNum || 'no-session'
+      if (sessionKey !== 'no-session') {
+        if (!waiter.sessions.has(sessionKey)) {
+          waiter.sessions.set(sessionKey, {
+            sessionNum: sessionKey,
+            revenue: 0,
+            orders: new Set(),
+            firstOrder: openTime,
+            lastOrder: openTime,
+          })
+        }
+        const session = waiter.sessions.get(sessionKey)!
+        session.revenue += sale.amount || 0
+        session.orders.add(sale.orderNum)
+        if (openTime.getTime() < session.firstOrder.getTime()) session.firstOrder = openTime
+        if (openTime.getTime() > session.lastOrder.getTime()) session.lastOrder = openTime
+      }
+
+      // By day
+      const dayKey = openTime.toISOString().split('T')[0]
+      if (!waiter.days.has(dayKey)) {
+        waiter.days.set(dayKey, {
+          date: dayKey,
+          revenue: 0,
+          orders: new Set(),
+          guestCount: 0,
+        })
+      }
+      const day = waiter.days.get(dayKey)!
+      day.revenue += sale.amount || 0
+      if (!day.orders.has(sale.orderNum) && sale.guestCount) {
+        day.guestCount += sale.guestCount
+      }
+      day.orders.add(sale.orderNum)
+
+      // By category
+      const catKey = sale.dishCategory || 'Другое'
+      if (!waiter.categories.has(catKey)) {
+        waiter.categories.set(catKey, { category: catKey, revenue: 0, quantity: 0 })
+      }
+      const cat = waiter.categories.get(catKey)!
+      cat.revenue += sale.amount || 0
+      cat.quantity += sale.quantity || 0
+
+      // By hour
+      const hour = openTime.getHours()
+      if (!waiter.hours.has(hour)) {
+        waiter.hours.set(hour, { hour, revenue: 0, orderCount: 0 })
+      }
+      const h = waiter.hours.get(hour)!
+      h.revenue += sale.amount || 0
+      if (isNewOrder) h.orderCount++
+    }
+
+    // Build response
+    const waiters = Array.from(waiterMap.values())
+      .map(w => {
+        // Calculate avg service time
+        const serviceTimes: number[] = []
+        for (const order of w.orderTimes.values()) {
+          if (order.close) {
+            const minutes = (order.close.getTime() - order.open.getTime()) / (1000 * 60)
+            if (minutes > 0 && minutes < 480) serviceTimes.push(minutes)
+          }
+        }
+        const avgServiceMinutes = serviceTimes.length > 0
+          ? serviceTimes.reduce((a, b) => a + b, 0) / serviceTimes.length
+          : 0
+
+        return {
+          waiterId: w.waiterId,
+          waiterName: w.waiterName,
+          revenue: w.revenue,
+          quantity: w.quantity,
+          orderCount: w.orders.size,
+          averageCheck: w.orders.size > 0 ? w.revenue / w.orders.size : 0,
+          guestCount: w.guestCount,
+          totalDiscount: w.totalDiscount,
+          avgServiceMinutes,
+          // Shifts/sessions
+          shiftCount: w.sessions.size,
+          shifts: Array.from(w.sessions.values())
+            .map(s => {
+              const firstMs = s.firstOrder instanceof Date ? s.firstOrder.getTime() : 0
+              const lastMs = s.lastOrder instanceof Date ? s.lastOrder.getTime() : 0
+              return {
+                sessionNum: s.sessionNum,
+                revenue: s.revenue,
+                orderCount: s.orders.size,
+                firstOrder: firstMs ? new Date(firstMs).toISOString() : '',
+                lastOrder: lastMs ? new Date(lastMs).toISOString() : '',
+                durationHours: firstMs && lastMs ? (lastMs - firstMs) / (1000 * 60 * 60) : 0,
+              }
+            })
+            .sort((a, b) => a.firstOrder.localeCompare(b.firstOrder)),
+          // Daily breakdown
+          daysWorked: w.days.size,
+          byDay: Array.from(w.days.values())
+            .map(d => ({
+              date: d.date,
+              revenue: d.revenue,
+              orderCount: d.orders.size,
+              averageCheck: d.orders.size > 0 ? d.revenue / d.orders.size : 0,
+              guestCount: d.guestCount,
+            }))
+            .sort((a, b) => a.date.localeCompare(b.date)),
+          // Top categories for this waiter
+          byCategory: Array.from(w.categories.values())
+            .sort((a, b) => b.revenue - a.revenue),
+          // By hour
+          byHour: Array.from(w.hours.values())
+            .sort((a, b) => a.hour - b.hour),
+        }
+      })
+      .sort((a, b) => b.revenue - a.revenue)
+
+    // Summary
+    const totalRevenue = waiters.reduce((sum, w) => sum + w.revenue, 0)
+    const totalOrders = waiters.reduce((sum, w) => sum + w.orderCount, 0)
+
+    res.json({
+      summary: {
+        totalWaiters: waiters.length,
+        totalRevenue,
+        totalOrders,
+        avgRevenuePerWaiter: waiters.length > 0 ? totalRevenue / waiters.length : 0,
+        avgOrdersPerWaiter: waiters.length > 0 ? totalOrders / waiters.length : 0,
+      },
+      waiters,
+    })
+  } catch (error: any) {
+    console.error('Get detailed waiter analytics error:', error)
+    console.error('Stack:', error?.stack)
+    res.status(500).json({
+      message: error?.message || 'Failed to get detailed waiter analytics',
+      stack: process.env.NODE_ENV !== 'production' ? error?.stack : undefined,
+    })
+  }
+})
+
 // ==================== API EXPLORATION ====================
 
 // Discover available OLAP fields

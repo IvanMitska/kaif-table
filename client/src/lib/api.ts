@@ -324,6 +324,74 @@ export interface CookingPlaceAnalytics {
   totalRevenue: number
 }
 
+export interface NomenclatureData {
+  totalItems: number
+  totalCategories: number
+  totalGroups: number
+  categories: Array<{ id: string; name: string }>
+  byGroup: Array<{
+    group: string
+    itemCount: number
+    items: Array<{
+      id: string
+      name: string
+      code: string | null
+      type: string
+      parentName: string | null
+      categoryName: string | null
+      price: number | null
+    }>
+  }>
+}
+
+export interface WaiterDetailedAnalytics {
+  summary: {
+    totalWaiters: number
+    totalRevenue: number
+    totalOrders: number
+    avgRevenuePerWaiter: number
+    avgOrdersPerWaiter: number
+  }
+  waiters: Array<{
+    waiterId: string
+    waiterName: string
+    revenue: number
+    quantity: number
+    orderCount: number
+    averageCheck: number
+    guestCount: number
+    totalDiscount: number
+    avgServiceMinutes: number
+    shiftCount: number
+    daysWorked: number
+    shifts: Array<{
+      sessionNum: string
+      revenue: number
+      orderCount: number
+      firstOrder: string
+      lastOrder: string
+      durationHours: number
+    }>
+    byDay: Array<{
+      date: string
+      revenue: number
+      orderCount: number
+      averageCheck: number
+      guestCount: number
+    }>
+    byCategory: Array<{
+      category: string
+      revenue: number
+      quantity: number
+    }>
+    byHour: Array<{
+      hour: number
+      revenue: number
+      orderCount: number
+    }>
+  }>
+}
+
 export const iikoApi = {
   getSettings: async (): Promise<IikoSettings | null> => {
     const { data } = await api.get('/iiko/settings')
@@ -384,6 +452,14 @@ export const iikoApi = {
   },
   getCookingPlaceAnalytics: async (dateFrom: string, dateTo: string): Promise<CookingPlaceAnalytics> => {
     const { data } = await api.get('/iiko/analytics/cooking-places', { params: { dateFrom, dateTo } })
+    return data
+  },
+  getNomenclature: async (): Promise<NomenclatureData> => {
+    const { data } = await api.get('/iiko/nomenclature')
+    return data
+  },
+  getWaiterDetailedAnalytics: async (dateFrom: string, dateTo: string): Promise<WaiterDetailedAnalytics> => {
+    const { data } = await api.get('/iiko/analytics/waiters/detailed', { params: { dateFrom, dateTo } })
     return data
   },
 }

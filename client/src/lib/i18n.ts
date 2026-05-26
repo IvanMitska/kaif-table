@@ -251,6 +251,31 @@ export const translations = {
       // Cooking places
       byCookingPlace: 'По местам приготовления',
       place: 'Место',
+      // Nomenclature
+      nomenclature: 'Номенклатура',
+      nomenclatureSubtitle: 'Актуальное меню из iiko',
+      menuGroup: 'Группа меню',
+      menuItems: 'Позиции',
+      totalItems: 'Всего позиций',
+      totalGroups: 'Групп',
+      loadNomenclature: 'Загрузить меню',
+      loadingNomenclature: 'Загрузка меню...',
+      price: 'Цена',
+      code: 'Код',
+      // Detailed waiter analytics
+      waiterDetailed: 'Детальная аналитика по официантам',
+      shifts: 'Смены',
+      shiftCount: 'Кол-во смен',
+      daysWorked: 'Дней работы',
+      avgServiceTime2: 'Ср. время обсл.',
+      discount: 'Скидки',
+      shift: 'Смена',
+      duration: 'Длительность',
+      hours: 'ч',
+      showDetails: 'Подробнее',
+      hideDetails: 'Скрыть',
+      byDayBreakdown: 'По дням',
+      byCategoryBreakdown: 'По категориям',
     },
     // Common
     common: {
@@ -267,6 +292,7 @@ export const translations = {
       all: 'Все',
       yes: 'Да',
       no: 'Нет',
+      reset: 'Сбросить',
     },
   },
   th: {
@@ -519,6 +545,31 @@ export const translations = {
       // Cooking places
       byCookingPlace: 'ตามจุดปรุงอาหาร',
       place: 'จุด',
+      // Nomenclature
+      nomenclature: 'เมนู',
+      nomenclatureSubtitle: 'เมนูปัจจุบันจาก iiko',
+      menuGroup: 'กลุ่มเมนู',
+      menuItems: 'รายการ',
+      totalItems: 'รายการทั้งหมด',
+      totalGroups: 'กลุ่ม',
+      loadNomenclature: 'โหลดเมนู',
+      loadingNomenclature: 'กำลังโหลดเมนู...',
+      price: 'ราคา',
+      code: 'รหัส',
+      // Detailed waiter analytics
+      waiterDetailed: 'วิเคราะห์พนักงานเสิร์ฟโดยละเอียด',
+      shifts: 'กะ',
+      shiftCount: 'จำนวนกะ',
+      daysWorked: 'วันทำงาน',
+      avgServiceTime2: 'เวลาบริการเฉลี่ย',
+      discount: 'ส่วนลด',
+      shift: 'กะ',
+      duration: 'ระยะเวลา',
+      hours: 'ชม.',
+      showDetails: 'รายละเอียด',
+      hideDetails: 'ซ่อน',
+      byDayBreakdown: 'ตามวัน',
+      byCategoryBreakdown: 'ตามหมวดหมู่',
     },
     // Common
     common: {
@@ -535,6 +586,7 @@ export const translations = {
       all: 'ทั้งหมด',
       yes: 'ใช่',
       no: 'ไม่',
+      reset: 'ล้าง',
     },
   },
 }
